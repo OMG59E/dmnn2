@@ -1,0 +1,14 @@
+prefix=/home/xingwg/workspaces/dmnn2/3rdparty/ffmpeg
+exec_prefix=${prefix}
+libdir=/home/xingwg/workspaces/dmnn2/3rdparty/ffmpeg/lib
+includedir=/home/xingwg/workspaces/dmnn2/3rdparty/ffmpeg/include
+
+Name: libswscale
+Description: FFmpeg image rescaling library
+Version: 5.8.100
+Requires: 
+Requires.private: libavutil >= 56.57.100
+Conflicts:
+Libs: -L${libdir}  -lswscale 
+Libs.private: -lm
+Cflags: -I${includedir}

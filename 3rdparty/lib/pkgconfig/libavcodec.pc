@@ -1,0 +1,14 @@
+prefix=/home/xingwg/workspaces/dmnn2/3rdparty/ffmpeg
+exec_prefix=${prefix}
+libdir=/home/xingwg/workspaces/dmnn2/3rdparty/ffmpeg/lib
+includedir=/home/xingwg/workspaces/dmnn2/3rdparty/ffmpeg/include
+
+Name: libavcodec
+Description: FFmpeg codec library
+Version: 58.97.102
+Requires: 
+Requires.private: libswresample >= 3.8.100, libavutil >= 56.57.100
+Conflicts:
+Libs: -L${libdir}  -lavcodec 
+Libs.private: -pthread -lm -lz -L/usr/local/lib -lx264 -lpthread -lm -ldl -L/usr/local/lib -lx265 -lstdc++ -lm -lgcc_s -lgcc -lgcc_s -lgcc -lrt -ldl -lnuma -ldl
+Cflags: -I${includedir}

@@ -1,0 +1,14 @@
+prefix=/home/xingwg/workspaces/dmnn2/3rdparty/ffmpeg
+exec_prefix=${prefix}
+libdir=/home/xingwg/workspaces/dmnn2/3rdparty/ffmpeg/lib
+includedir=/home/xingwg/workspaces/dmnn2/3rdparty/ffmpeg/include
+
+Name: libswresample
+Description: FFmpeg audio resampling library
+Version: 3.8.100
+Requires: 
+Requires.private: libavutil >= 56.57.100
+Conflicts:
+Libs: -L${libdir}  -lswresample 
+Libs.private: -lm
+Cflags: -I${includedir}

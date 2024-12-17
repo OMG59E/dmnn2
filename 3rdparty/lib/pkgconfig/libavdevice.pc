@@ -1,0 +1,14 @@
+prefix=/home/xingwg/workspaces/dmnn2/3rdparty/ffmpeg
+exec_prefix=${prefix}
+libdir=/home/xingwg/workspaces/dmnn2/3rdparty/ffmpeg/lib
+includedir=/home/xingwg/workspaces/dmnn2/3rdparty/ffmpeg/include
+
+Name: libavdevice
+Description: FFmpeg device handling library
+Version: 58.11.101
+Requires: 
+Requires.private: libavfilter >= 7.87.100, libswscale >= 5.8.100, libpostproc >= 55.8.100, libavformat >= 58.49.100, libavcodec >= 58.97.102, libswresample >= 3.8.100, libavutil >= 56.57.100
+Conflicts:
+Libs: -L${libdir}  -lavdevice 
+Libs.private: -lm -lasound -lm -ldl -lpthread -lrt
+Cflags: -I${includedir}
