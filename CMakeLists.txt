@@ -25,6 +25,7 @@ set(CUDA_NVCC_FLAGS -w; -O2; -Xcompiler -fPIC;
 )
 
 # CUDA
+cmake_policy(SET CMP0146 OLD)
 find_package(CUDA 11.1 EXACT QUIET REQUIRED)
 if (CUDA_FOUND)
     message(STATUS "Found CUDA: ${CUDA_TOOLKIT_ROOT_DIR} (found version \"${CUDA_VERSION}\")")
@@ -85,7 +86,7 @@ include_directories(src/parsers/onnx/)
 # 3rdparty
 include_directories(3rdparty/include)
 link_directories(3rdparty/lib)
-set(FFMPEG_LIBRARIES avcodec avformat avutil swscale)
+set(FFMPEG_LIBRARIES avcodec avformat avutil swscale swresample)
 set(NV_DRIVER_LIBRARIES nvcuvid cuda)
 if (EXISTS "/proc/sys/fs/binfmt_misc/WSLInterop")
     message(STATUS "Running on WSL")
