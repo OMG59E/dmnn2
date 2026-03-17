@@ -1,11 +1,14 @@
+# ==============================================================================
+# dmnn2 Tools Configuration
+# ==============================================================================
 
 set(SRC_FILE_EXTENSIONS h hpp hu c cpp cu cc)
 set(EXCLUDE_FILE_EXTENSTIONS pb.h pb.cc)
 set(LINT_DIRS tools)
 
-cmake_policy(SET CMP0009 NEW)  # suppress cmake warning
+cmake_policy(SET CMP0009 NEW)
 
-# find all files of interest
+# Find all tool source files
 foreach(ext ${SRC_FILE_EXTENSIONS})
     foreach(dir ${LINT_DIRS})
         file(GLOB_RECURSE FOUND_FILES ${CMAKE_SOURCE_DIR}/${dir}/*.${ext})
@@ -14,4 +17,3 @@ foreach(ext ${SRC_FILE_EXTENSIONS})
 endforeach()
 
 set(TOOL_SOURCES ${LINT_SOURCES} PARENT_SCOPE)
-

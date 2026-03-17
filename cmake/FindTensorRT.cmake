@@ -1,22 +1,36 @@
-# FindTensorRT.cmake
+# ==============================================================================
+# FindTensorRT.cmake - Find NVIDIA TensorRT library
+# ==============================================================================
+#
+# This module finds TensorRT and sets the following variables:
+#
+#   TensorRT_FOUND        - True if TensorRT was found
+#   TensorRT_INCLUDE_DIR  - TensorRT include directory
+#   TensorRT_LIBRARIES    - TensorRT libraries
+#   TensorRT_VERSION      - TensorRT version string
+#
+# ==============================================================================
 
-# 设置 TensorRT 的根目录（可根据需要修改）
-if (NOT TENSORRT_ROOT_DIR)
+# Set default TensorRT root directory
+if(NOT TENSORRT_ROOT_DIR)
     set(TENSORRT_ROOT_DIR "/usr/local/TensorRT")
 endif()
 
+# Find include directory
 find_path(TENSORRT_INCLUDE_DIR
     NAMES NvInfer.h
     PATHS ${TENSORRT_ROOT_DIR}
     PATH_SUFFIXES include
 )
 
+# Find nvinfer library
 find_library(TENSORRT_NVINFER_LIBRARY
     NAMES nvinfer
     PATHS ${TENSORRT_ROOT_DIR}
     PATH_SUFFIXES lib
 )
 
+# Find static libraries
 find_library(TENSORRT_NVINFER_STATIC_LIBRARY
     NAMES nvinfer_static
     PATHS ${TENSORRT_ROOT_DIR}
@@ -29,8 +43,8 @@ find_library(TENSORRT_NVINFER_PLUGIN_STATIC_LIBRARY
     PATH_SUFFIXES lib
 )
 
-if (TENSORRT_INCLUDE_DIR)
-    # 查找头文件
+# Extract version from header
+if(TENSORRT_INCLUDE_DIR)
     find_path(TENSORRT_INCLUDE_DIR NAMES NvInferVersion.h)
     file(READ "${TENSORRT_INCLUDE_DIR}/NvInferVersion.h" NvInferVersionContent)
     string(REGEX MATCH "#define NV_TENSORRT_MAJOR[ \t]+([0-9]+)" _major_match "${NvInferVersionContent}")
@@ -41,14 +55,10 @@ if (TENSORRT_INCLUDE_DIR)
     set(TENSORRT_PATCH ${CMAKE_MATCH_1})
     string(REGEX MATCH "#define NV_TENSORRT_BUILD[ \t]+([0-9]+)" _build_match "${NvInferVersionContent}")
     set(TENSORRT_BUILD ${CMAKE_MATCH_1})
-    set(TensorRT_VERSION ${TENSORRT_MAJOR}.${TENSORRT_MINOR}.${TENSORRT_PATCH}.${TENSORRT_BUILD})
-    if (NOT TensorRT_VERSION)
-        message(FATAL_ERROR "Unable to extract version from NvInferVersion.h")
-    endif()
+    set(TensorRT_VERSION "${TENSORRT_MAJOR}.${TENSORRT_MINOR}.${TENSORRT_PATCH}.${TENSORRT_BUILD}")
 endif()
 
-
-# 设置变量
+# Set output variables
 if(TENSORRT_INCLUDE_DIR AND TENSORRT_NVINFER_LIBRARY)
     set(TensorRT_FOUND TRUE)
     set(TensorRT_INCLUDE_DIR ${TENSORRT_INCLUDE_DIR})
@@ -59,10 +69,15 @@ else()
     set(TensorRT_FOUND FALSE)
 endif()
 
-# 输出查找结果
+# Handle REQUIRED argument
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(TensorRT
+    REQUIRED_VARS TensorRT_LIBRARIES TENSORRT_INCLUDE_DIR
+    VERSION_VAR TensorRT_VERSION
+)
+
+# Print status
 if(TensorRT_FOUND)
-    message(STATUS "Found TensorRT: ${TENSORRT_ROOT_DIR} (found version \"${TensorRT_VERSION}\")")
-    message(STATUS "Found TensorRT_LIBRARIES: ${TensorRT_LIBRARIES}")
-else()
-    message(FATAL_ERROR "TensorRT not found")
+    message(STATUS "Found TensorRT: ${TENSORRT_ROOT_DIR} (version ${TensorRT_VERSION})")
+    message(STATUS "TensorRT libraries: ${TensorRT_LIBRARIES}")
 endif()

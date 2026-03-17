@@ -1,11 +1,161 @@
-BasedOnStyle: LLVM
-# 在大括号前换行: Attach(始终将大括号附加到周围的上下文), Linux(除函数、命名空间和类定义，与Attach类似), 
-#   Mozilla(除枚举、函数、记录定义，与Attach类似), Stroustrup(除函数定义、catch、else，与Attach类似), 
-#   Allman(总是在大括号前换行), GNU(总是在大括号前换行，并对于控制语句的大括号增加额外的缩进), WebKit(在函数前换行), Custom
-#   注：这里认为语句块也属于函数
-BreakBeforeBraces: Attach 
+# ==============================================================================
+# dmnn2 Clang-Format Configuration
+# ==============================================================================
+# Based on Google C++ Style Guide with project-specific modifications
+
+BasedOnStyle: Google
+
+# ------------------------------------------------------------------------------
+# Language and Standard
+# ------------------------------------------------------------------------------
+Language: Cpp
+Standard: c++17
+
+# ------------------------------------------------------------------------------
+# Indentation
+# ------------------------------------------------------------------------------
 IndentWidth: 4
 TabWidth: 4
-AccessModifierOffset: -4
-# 在尾随的评论前添加的空格数(只适用于//)
+UseTab: Never
+IndentCaseLabels: true
+IndentCaseBlocks: false
+IndentPPDirectives: None
+IndentExternBlock: AfterExternBlock
+IndentWrappedFunctionNames: false
+NamespaceIndentation: None
+
+# ------------------------------------------------------------------------------
+# Alignment
+# ------------------------------------------------------------------------------
+AlignAfterOpenBracket: Align
+AlignArrayOfStructures: None
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: None
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: None
+AlignEscapedNewlines: Left
+AlignOperands: Align
+AlignTrailingComments: true
+
+# ------------------------------------------------------------------------------
+# Braces
+# ------------------------------------------------------------------------------
+BreakBeforeBraces: Attach
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: false
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterFunction: false
+  AfterNamespace: false
+  AfterStruct: false
+  AfterUnion: false
+  AfterExternBlock: false
+  BeforeCatch: false
+  BeforeElse: false
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+
+# ------------------------------------------------------------------------------
+# Line Breaking
+# ------------------------------------------------------------------------------
+ColumnLimit: 120
+AllowAllParametersOnNextLine: true
+AllowShortBlocksOnASingleLine: Empty
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: true
+AlwaysBreakTemplateDeclarations: Yes
+BreakBeforeBinaryOperators: None
+BreakBeforeConceptDeclarations: true
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeColon
+BreakInheritanceList: BeforeColon
+BreakStringLiterals: true
+
+# ------------------------------------------------------------------------------
+# Spacing
+# ------------------------------------------------------------------------------
+SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceAroundPointerQualifiers: Default
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceBeforeSquareBrackets: false
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
 SpacesBeforeTrailingComments: 2
+SpacesInAngles: Never
+SpacesInCStyleCastParentheses: false
+SpacesInConditionalStatement: false
+SpacesInContainerLiterals: true
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+
+# ------------------------------------------------------------------------------
+# Includes
+# ------------------------------------------------------------------------------
+IncludeBlocks: Preserve
+SortIncludes: CaseSensitive
+IncludeCategories:
+  # System headers
+  - Regex: '<[a-z_]+>'
+    Priority: 1
+  # C++ standard library
+  - Regex: '<[a-z_/]+>'
+    Priority: 2
+  # CUDA headers
+  - Regex: '<cuda.*\.h>'
+    Priority: 3
+  - Regex: '<cudnn\.h>'
+    Priority: 3
+  - Regex: '<cublas.*\.h>'
+    Priority: 3
+  - Regex: '<NvInfer.*\.h>'
+    Priority: 3
+  - Regex: '<nvjpeg\.h>'
+    Priority: 3
+  # Project headers
+  - Regex: '".*"'
+    Priority: 4
+
+# ------------------------------------------------------------------------------
+# Other Options
+# ------------------------------------------------------------------------------
+AccessModifierOffset: -4
+BinPackArguments: true
+BinPackParameters: true
+CompactNamespaces: false
+Cpp11BracedListStyle: true
+DeriveLineEnding: true
+DerivePointerAlignment: true
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: LogicalBlock
+FixNamespaceComments: true
+InsertBraces: false
+InsertTrailingCommas: None
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+PackConstructorInitializers: NextLine
+PointerAlignment: Right
+QualifierAlignment: Leave
+ReflowComments: true
+SeparateDefinitionBlocks: Leave
+ShortNamespaceLines: 1
+SortUsingDeclarations: true
+UseCRLF: false

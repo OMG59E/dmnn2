@@ -1,9 +1,13 @@
+# ==============================================================================
+# dmnn2 Samples Configuration
+# ==============================================================================
+
 set(SRC_FILE_EXTENSIONS c cpp cu cc)
 set(LINT_DIRS samples)
 
-cmake_policy(SET CMP0009 NEW)  # suppress cmake warning
+cmake_policy(SET CMP0009 NEW)
 
-# find all files of interest
+# Find all sample source files
 foreach(ext ${SRC_FILE_EXTENSIONS})
     foreach(dir ${LINT_DIRS})
         file(GLOB_RECURSE FOUND_FILES ${CMAKE_SOURCE_DIR}/${dir}/*.${ext})

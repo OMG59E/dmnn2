@@ -1,6 +1,17 @@
+# ==============================================================================
+# dmnn2 - Deep Learning Inference Framework based on TensorRT
+# ==============================================================================
 cmake_minimum_required(VERSION 3.10)
-project(dmnn C CXX)
 
+project(dmnn
+    VERSION 1.0.0
+    DESCRIPTION "Deep Learning Inference Framework based on TensorRT"
+    LANGUAGES C CXX
+)
+
+# ------------------------------------------------------------------------------
+# Build Configuration
+# ------------------------------------------------------------------------------
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
 endif()
@@ -8,31 +19,45 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 cmake_policy(SET CMP0077 NEW)
 
-# 设置 C++ 标准
+# C++ Standard
 set(CMAKE_CXX_STANDARD 17)
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -g -fPIC")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fPIC")
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -O2 -fPIC")  # -Wl,-Bsymbolic
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -fPIC -w")
 endif()
+
+# ------------------------------------------------------------------------------
+# CUDA Configuration
+# ------------------------------------------------------------------------------
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 set(CUDA_SEPARABLE_COMPILATION ON)
-set(CUDA_NVCC_FLAGS -w; -O2; -Xcompiler -fPIC;
-    -gencode arch=compute_61,code=sm_61;  # GTX1060/1070/1080/1080Ti
-    -gencode arch=compute_70,code=sm_70;  # GTX V100
-    -gencode arch=compute_75,code=sm_75;  # RTX2060/2070/2080/2080Ti, Tesla T4, GTX1660
-    -gencode arch=compute_86,code=sm_86;  # RTX3060/3070/3080/3080Ti/3090, A1000/2000/3000/4000
+set(CUDA_NVCC_FLAGS
+    -O2
+    -Xcompiler -fPIC -w
+    # Supported GPU architectures
+    -gencode arch=compute_61,code=sm_61   # Pascal (GTX 1060/1070/1080/1080 Ti)
+    -gencode arch=compute_70,code=sm_70   # Volta (V100)
+    -gencode arch=compute_75,code=sm_75   # Turing (RTX 2060/2070/2080, Tesla T4)
+    -gencode arch=compute_86,code=sm_86   # Ampere (RTX 3060/3070/3080/3090, A1000-A4000)
 )
 
-# CUDA
+# ------------------------------------------------------------------------------
+# CUDA Toolkit
+# ------------------------------------------------------------------------------
 cmake_policy(SET CMP0146 OLD)
 find_package(CUDA 11.1 EXACT QUIET REQUIRED)
-if (CUDA_FOUND)
-    message(STATUS "Found CUDA: ${CUDA_TOOLKIT_ROOT_DIR} (found version \"${CUDA_VERSION}\")")
+if(CUDA_FOUND)
+    message(STATUS "Found CUDA: ${CUDA_TOOLKIT_ROOT_DIR} (version ${CUDA_VERSION})")
     link_directories(${CUDA_TOOLKIT_ROOT_DIR}/lib64)
 else()
-    message(FATAL_ERROR "Not found CUDA")
+    message(FATAL_ERROR "CUDA not found")
 endif()
+
+# cuDNN
 find_library(CUDA_CUDNN_LIBRARIES NAMES cudnn HINTS "${CUDA_TOOLKIT_ROOT_DIR}/lib64")
 if(CUDA_CUDNN_LIBRARIES)
     find_path(CUDNN_INCLUDE_DIR NAMES cudnn_version.h PATHS ${CUDA_INCLUDE_DIRS})
@@ -43,38 +68,45 @@ if(CUDA_CUDNN_LIBRARIES)
     set(CUDNN_VERSION_MINOR ${CMAKE_MATCH_1})
     string(REGEX MATCH "#define CUDNN_PATCHLEVEL ([0-9]+)" _patch_match "${CuDNNVersionContent}")
     set(CUDNN_VERSION_PATCH ${CMAKE_MATCH_1})
-    set(CUDNN_VERSION ${CUDNN_VERSION_MAJOR}.${CUDNN_VERSION_MINOR}.${CUDNN_VERSION_PATCH})
-    if (CUDNN_VERSION)
-        message(STATUS "Found cuDNN: ${CUDA_CUDNN_LIBRARIES} (found version \"${CUDNN_VERSION}\")")
-    else()
-        message(FATAL_ERROR "Unable to extract version from cudnn_version.h")
-    endif()
+    set(CUDNN_VERSION "${CUDNN_VERSION_MAJOR}.${CUDNN_VERSION_MINOR}.${CUDNN_VERSION_PATCH}")
+    message(STATUS "Found cuDNN: ${CUDA_CUDNN_LIBRARIES} (version ${CUDNN_VERSION})")
 else()
-    message(FATAL_ERROR "Not found cuDNN")
+    message(FATAL_ERROR "cuDNN not found")
 endif()
+
 # nvJPEG
 find_library(NVJPEG_LIBRARIES nvjpeg HINTS ${CUDA_TOOLKIT_ROOT_DIR}/lib64)
 if(NVJPEG_LIBRARIES)
     message(STATUS "Found nvJPEG: ${NVJPEG_LIBRARIES}")
 else()
-    message(FATAL_ERROR "Not found nvJPEG")
+    message(FATAL_ERROR "nvJPEG not found")
 endif()
 
+# ------------------------------------------------------------------------------
 # TensorRT
+# ------------------------------------------------------------------------------
 find_package(TensorRT REQUIRED)
 
+# ------------------------------------------------------------------------------
 # Protobuf
+# ------------------------------------------------------------------------------
 find_package(Protobuf QUIET REQUIRED)
-message(STATUS "Found Protobuf: ${Protobuf_LIBRARIES} (found version \"${Protobuf_VERSION}\")")
+message(STATUS "Found Protobuf: ${Protobuf_LIBRARIES} (version ${Protobuf_VERSION})")
 protobuf_generate_cpp(TRT_CAFFE_PROTO_SRCS TRT_CAFFE_PROTO_HDRS ${PROJECT_SOURCE_DIR}/src/parsers/caffe/proto/trtcaffe.proto)
 protobuf_generate_cpp(TRT_ONNX_PROTO_SRCS TRT_ONNX_PROTO_HDRS ${PROJECT_SOURCE_DIR}/src/parsers/onnx/proto/onnx-ml.proto)
 message(STATUS "Generated trtcaffe.proto: ${TRT_CAFFE_PROTO_SRCS};${TRT_CAFFE_PROTO_HDRS}")
 message(STATUS "Generated onnx-ml.proto: ${TRT_ONNX_PROTO_SRCS};${TRT_ONNX_PROTO_HDRS}")
-#
+
+# ------------------------------------------------------------------------------
+# Source Files
+# ------------------------------------------------------------------------------
 add_subdirectory(tools)
 add_subdirectory(src)
 add_subdirectory(samples)
 
+# ------------------------------------------------------------------------------
+# Include Directories
+# ------------------------------------------------------------------------------
 include_directories(${CUDA_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${TensorRT_INCLUDE_DIR})
@@ -82,28 +114,70 @@ include_directories(include)
 include_directories(include/utils/spdlog/include)
 include_directories(include/utils/argparse/include)
 include_directories(src/utils)
-include_directories(src/parsers/onnx/)
-# 3rdparty
+include_directories(src/parsers/onnx)
+
+# Third-party libraries
 include_directories(3rdparty/include)
 link_directories(3rdparty/lib)
+
 set(FFMPEG_LIBRARIES avcodec avformat avutil swscale swresample)
 set(NV_DRIVER_LIBRARIES nvcuvid cuda)
-if (EXISTS "/proc/sys/fs/binfmt_misc/WSLInterop")
+
+# WSL support
+if(EXISTS "/proc/sys/fs/binfmt_misc/WSLInterop")
     message(STATUS "Running on WSL")
     link_directories(/usr/lib/wsl/lib)
 endif()
 
-#
-cuda_add_library(${PROJECT_NAME} SHARED ${DMNN_SOURCES} ${TRT_CAFFE_PROTO_SRCS} ${TRT_ONNX_PROTO_SRCS})
-target_link_libraries(${PROJECT_NAME} ${TensorRT_LIBRARIES} ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} 
-    ${CUDA_CUDNN_LIBRARIES} ${Protobuf_LIBRARIES} ${NVJPEG_LIBRARIES} ${FFMPEG_LIBRARIES} ${NV_DRIVER_LIBRARIES})
+# ------------------------------------------------------------------------------
+# Library Target
+# ------------------------------------------------------------------------------
+cuda_add_library(${PROJECT_NAME} SHARED
+    ${DMNN_SOURCES}
+    ${TRT_CAFFE_PROTO_SRCS}
+    ${TRT_ONNX_PROTO_SRCS}
+)
+target_link_libraries(${PROJECT_NAME}
+    ${TensorRT_LIBRARIES}
+    ${CUDA_LIBRARIES}
+    ${CUDA_CUBLAS_LIBRARIES}
+    ${CUDA_CUDNN_LIBRARIES}
+    ${Protobuf_LIBRARIES}
+    ${NVJPEG_LIBRARIES}
+    ${FFMPEG_LIBRARIES}
+    ${NV_DRIVER_LIBRARIES}
+)
 
-#
+# ------------------------------------------------------------------------------
+# Python Bindings (pybind11)
+# ------------------------------------------------------------------------------
+# Find Python from miniconda/conda environment
+if(DEFINED ENV{CONDA_PREFIX})
+    message(STATUS "Detected Conda environment: $ENV{CONDA_PREFIX}")
+    set(PYTHON_EXECUTABLE "$ENV{CONDA_PREFIX}/bin/python" CACHE PATH "Python executable" FORCE)
+elseif(DEFINED ENV{CONDA_EXE})
+    # Try to find miniconda default location
+    get_filename_component(CONDA_ROOT "$ENV{CONDA_EXE}" DIRECTORY)
+    get_filename_component(CONDA_ROOT "${CONDA_ROOT}" DIRECTORY)
+    if(EXISTS "${CONDA_ROOT}/bin/python")
+        set(PYTHON_EXECUTABLE "${CONDA_ROOT}/bin/python" CACHE PATH "Python executable" FORCE)
+        message(STATUS "Using Conda Python: ${PYTHON_EXECUTABLE}")
+    endif()
+endif()
+
+# Find Python before pybind11
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+message(STATUS "Found Python3: ${Python3_EXECUTABLE}")
+message(STATUS "Python3 include dirs: ${Python3_INCLUDE_DIRS}")
+
 add_subdirectory(python/pybind11)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/python)
 pybind11_add_module(pydmnn SHARED python/pydmnn.cpp)
 target_link_libraries(pydmnn PRIVATE pybind11::module)
 
+# ------------------------------------------------------------------------------
+# Helper Macro for Executables
+# ------------------------------------------------------------------------------
 macro(add_executables EXECUTABLE_LIST)
     foreach(EXECUTABLE_NAME ${EXECUTABLE_LIST})
         string(REPLACE "/" ";" SEXY_LIST ${EXECUTABLE_NAME})

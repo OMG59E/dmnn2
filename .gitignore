@@ -1,42 +1,176 @@
-# Prerequisites
-*.d
+# ==============================================================================
+# dmnn2 .gitignore
+# ==============================================================================
 
-# Compiled Object files
+# ------------------------------------------------------------------------------
+# Build Output
+# ------------------------------------------------------------------------------
+build/
+out/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake.in
+
+# ------------------------------------------------------------------------------
+# Compiled Files
+# ------------------------------------------------------------------------------
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
 *.slo
 *.lo
-*.o
-*.obj
 
-# Precompiled Headers
+# Precompiled headers
 *.gch
 *.pch
 
-# Compiled Dynamic libraries
+# Libraries
+*.a
+*.la
+*.lai
+*.lib
 *.so
+*.so.*
 *.dylib
 *.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
 
 # Executables
 *.exe
 *.out
 *.app
+*.i*86
+*.x86_64
+*.hex
 
-# IDEs and Editors
-.idea
-.vscode
-engines
-build
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# ------------------------------------------------------------------------------
+# IDE and Editors
+# ------------------------------------------------------------------------------
+# Visual Studio
+.vs/
+*.vcxproj
+*.vcxproj.*
+*.sln
+*.suo
+*.user
+*.sdf
+*.opensdf
+*.pdb
+*.ipch
+
+# Visual Studio Code
+.vscode/
+
+# JetBrains IDEs (CLion, IntelliJ, etc.)
+.idea/
+*.iml
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ------------------------------------------------------------------------------
+# Python
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ------------------------------------------------------------------------------
+# Model Files (Large binaries)
+# ------------------------------------------------------------------------------
 *.onnx
+*.engine
+*.trt
+*.plan
+*.pth
+*.pt
+*.weights
+*.bin
+*.caffemodel
+*.h5
+*.pkl
+*.pickle
+
+# ------------------------------------------------------------------------------
+# Data Files
+# ------------------------------------------------------------------------------
 *.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
 *.npz
-*.pyc
+*.npy
+
+# ------------------------------------------------------------------------------
+# Logs and Databases
+# ------------------------------------------------------------------------------
+*.log
+*.sql
+*.sqlite
+*.db
+
+# ------------------------------------------------------------------------------
+# OS Generated Files
+# ------------------------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ------------------------------------------------------------------------------
+# Project Specific
+# ------------------------------------------------------------------------------
+engines/
+*.engine
