@@ -4,7 +4,7 @@
 #pragma once
 
 #ifndef SPDLOG_HEADER_ONLY
-    #include <spdlog/cfg/helpers.h>
+#include <spdlog/cfg/helpers.h>
 #endif
 
 #include <spdlog/details/os.h>
@@ -22,9 +22,8 @@ namespace helpers {
 
 // inplace convert to lowercase
 inline std::string &to_lower_(std::string &str) {
-    std::transform(str.begin(), str.end(), str.begin(), [](char ch) {
-        return static_cast<char>((ch >= 'A' && ch <= 'Z') ? ch + ('a' - 'A') : ch);
-    });
+    std::transform(str.begin(), str.end(), str.begin(),
+                   [](char ch) { return static_cast<char>((ch >= 'A' && ch <= 'Z') ? ch + ('a' - 'A') : ch); });
     return str;
 }
 
@@ -98,8 +97,7 @@ SPDLOG_INLINE void load_levels(const std::string &input) {
         }
     }
 
-    details::registry::instance().set_levels(std::move(levels),
-                                             global_level_found ? &global_level : nullptr);
+    details::registry::instance().set_levels(std::move(levels), global_level_found ? &global_level : nullptr);
 }
 
 }  // namespace helpers

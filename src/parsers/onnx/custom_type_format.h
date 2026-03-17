@@ -9,10 +9,12 @@
  */
 #pragma once
 
+#include <NvInfer.h>
+
+#include <sstream>
+
 #include "ShapeTensor.hpp"
 #include "logging.h"
-#include <NvInfer.h>
-#include <sstream>
 
 // 定义自定义格式化函数
 template <>
@@ -32,30 +34,30 @@ struct fmt::formatter<nvinfer1::DataType> : fmt::formatter<std::string> {
     auto format(const nvinfer1::DataType &dataType, FormatContext &ctx) {
         std::string dtype_s;
         switch (dataType) {
-        case nvinfer1::DataType::kFLOAT:
-            dtype_s = "float32";
-            break;
-        case nvinfer1::DataType::kHALF:
-            dtype_s = "float16";
-            break;
-        case nvinfer1::DataType::kINT32:
-            dtype_s = "int32";
-            break;
-        case nvinfer1::DataType::kINT8:
-            dtype_s = "int8";
-            break;
-        case nvinfer1::DataType::kBOOL:
-            dtype_s = "bool";
-            break;
-        case nvinfer1::DataType::kUINT8:
-            dtype_s = "uint8";
-            break;
-        case nvinfer1::DataType::kFP8:
-            dtype_s = "float8";
-            break;
-        default:
-            LOG_FATAL("Unsupported data type: {}", static_cast<int>(dataType));
-            break;
+            case nvinfer1::DataType::kFLOAT:
+                dtype_s = "float32";
+                break;
+            case nvinfer1::DataType::kHALF:
+                dtype_s = "float16";
+                break;
+            case nvinfer1::DataType::kINT32:
+                dtype_s = "int32";
+                break;
+            case nvinfer1::DataType::kINT8:
+                dtype_s = "int8";
+                break;
+            case nvinfer1::DataType::kBOOL:
+                dtype_s = "bool";
+                break;
+            case nvinfer1::DataType::kUINT8:
+                dtype_s = "uint8";
+                break;
+            case nvinfer1::DataType::kFP8:
+                dtype_s = "float8";
+                break;
+            default:
+                LOG_FATAL("Unsupported data type: {}", static_cast<int>(dataType));
+                break;
         };
         return fmt::format_to(ctx.out(), dtype_s);
     }

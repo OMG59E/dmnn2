@@ -1,11 +1,11 @@
-/*** 
+/***
  * @Author: xingwg
  * @Date: 2024-12-09 15:27:39
  * @LastEditTime: 2024-12-13 12:51:17
  * @FilePath: /dmnn2/src/parsers/caffe/caffeParser/opParsers/parseBatchNorm.cpp
- * @Description: 
+ * @Description:
  * @
- * @Copyright (c) 2024 by Chinasvt, All Rights Reserved. 
+ * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
 #include "opParsers.h"
 
@@ -13,12 +13,9 @@ using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
 template <typename T>
-inline bool bnConvertWrap(float scaleFactor, const Weights &variance,
-                          const Weights &mean, const Weights &scaleBlob,
-                          const Weights &biasBlob, Weights &shift,
-                          Weights &scale, float eps, bool nvCaffe,
+inline bool bnConvertWrap(float scaleFactor, const Weights &variance, const Weights &mean, const Weights &scaleBlob,
+                          const Weights &biasBlob, Weights &shift, Weights &scale, float eps, bool nvCaffe,
                           CaffeWeightFactory &weightFactory) {
-
     assert(shift.count == scale.count);
     if (nvCaffe) {
         if (scaleBlob.values == nullptr)
@@ -58,10 +55,8 @@ inline bool bnConvertWrap(float scaleFactor, const Weights &variance,
     return true;
 }
 
-ILayer *parseBatchNormalization(INetworkDefinition &network,
-                                const trtcaffe::LayerParameter &msg,
-                                CaffeWeightFactory &weightFactory,
-                                BlobNameToTensor &tensors) {
+ILayer *parseBatchNormalization(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                                CaffeWeightFactory &weightFactory, BlobNameToTensor &tensors) {
     if (!checkBlobs(msg, 1, 1))
         return nullptr;
 
@@ -70,10 +65,8 @@ ILayer *parseBatchNormalization(INetworkDefinition &network,
 
     int C = parserutils::getCHW(tensors[msg.bottom(0)]->getDimensions()).c();
 
-    Weights mean{DataType::kFLOAT, nullptr, 0},
-        variance{DataType::kFLOAT, nullptr, 0},
-        scaleBlob{DataType::kFLOAT, nullptr, 0},
-        biasBlob{DataType::kFLOAT, nullptr, 0},
+    Weights mean{DataType::kFLOAT, nullptr, 0}, variance{DataType::kFLOAT, nullptr, 0},
+        scaleBlob{DataType::kFLOAT, nullptr, 0}, biasBlob{DataType::kFLOAT, nullptr, 0},
         movingAverage{DataType::kFLOAT, nullptr, 0};
 
     // Because of the incompatible nature of the batch normalizations
@@ -87,24 +80,19 @@ ILayer *parseBatchNormalization(INetworkDefinition &network,
             biasBlob = weightFactory(msg.name(), WeightType::kNVBIAS);
         } else {
             mean = weightFactory.allocateWeights(C);
-            variance = weightFactory.allocateWeights(
-                C, std::uniform_real_distribution<float>(0.9F, 1.1F));
-            scaleBlob = weightFactory.allocateWeights(
-                C, std::uniform_real_distribution<float>(0.9F, 1.1F));
+            variance = weightFactory.allocateWeights(C, std::uniform_real_distribution<float>(0.9F, 1.1F));
+            scaleBlob = weightFactory.allocateWeights(C, std::uniform_real_distribution<float>(0.9F, 1.1F));
             biasBlob = weightFactory.allocateWeights(C);
         }
     } else {
         if (weightFactory.isInitialized()) {
             mean = weightFactory(msg.name(), WeightType::kMEAN);
             variance = weightFactory(msg.name(), WeightType::kVARIANCE);
-            movingAverage =
-                weightFactory(msg.name(), WeightType::kMOVING_AVERAGE);
+            movingAverage = weightFactory(msg.name(), WeightType::kMOVING_AVERAGE);
         } else {
             mean = weightFactory.allocateWeights(C);
-            variance = weightFactory.allocateWeights(
-                C, std::uniform_real_distribution<float>(0.9F, 1.1F));
-            movingAverage = weightFactory.allocateWeights(
-                1, std::uniform_real_distribution<float>(0.99F, 1.01F));
+            variance = weightFactory.allocateWeights(C, std::uniform_real_distribution<float>(0.9F, 1.1F));
+            movingAverage = weightFactory.allocateWeights(1, std::uniform_real_distribution<float>(0.99F, 1.01F));
         }
         assert(mean.count == variance.count && movingAverage.count == 1);
     }
@@ -123,19 +111,16 @@ ILayer *parseBatchNormalization(INetworkDefinition &network,
             average = *(static_cast<const float16 *>(movingAverage.values));
         }
         if (average == 0.0f) {
-            std::cout << "Batch normalization moving average is zero"
-                      << std::endl;
+            std::cout << "Batch normalization moving average is zero" << std::endl;
             return nullptr;
         }
         scaleFactor /= average;
     }
     if (mean.type == DataType::kFLOAT) {
-        success = bnConvertWrap<float>(scaleFactor, variance, mean, scaleBlob,
-                                       biasBlob, shift, scale, p.eps(), nvCaffe,
+        success = bnConvertWrap<float>(scaleFactor, variance, mean, scaleBlob, biasBlob, shift, scale, p.eps(), nvCaffe,
                                        weightFactory);
     } else {
-        success = bnConvertWrap<float16>(scaleFactor, variance, mean, scaleBlob,
-                                         biasBlob, shift, scale, p.eps(),
+        success = bnConvertWrap<float16>(scaleFactor, variance, mean, scaleBlob, biasBlob, shift, scale, p.eps(),
                                          nvCaffe, weightFactory);
     }
 
@@ -145,7 +130,6 @@ ILayer *parseBatchNormalization(INetworkDefinition &network,
     weightFactory.convert(shift);
     weightFactory.convert(scale);
     weightFactory.convert(power);
-    return network.addScale(*tensors[msg.bottom(0)], ScaleMode::kCHANNEL, shift,
-                            scale, power);
+    return network.addScale(*tensors[msg.bottom(0)], ScaleMode::kCHANNEL, shift, scale, power);
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

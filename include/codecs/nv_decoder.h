@@ -8,11 +8,13 @@
  * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
 #pragma once
+#include <cuda.h>
+
+#include <sstream>
+
 #include "error_check.h"
 #include "logging.h"
 #include "nvcuvid.h"
-#include <cuda.h>
-#include <sstream>
 
 #define MAX_FRM_CNT 32
 
@@ -31,18 +33,18 @@ public:
      *  Application must call this function to initialize the decoder, before
      * starting to decode any frames.
      */
-    NvDecoder(CUcontext cuContext, bool bUseDeviceFrame, cudaVideoCodec eCodec,
-              bool bLowLatency = false, bool bDeviceFramePitched = false,
-              const Rect *pCropRect = nullptr, const Dim *pResizeDim = nullptr,
-              bool extract_user_SEI_Message = false, int maxWidth = 0,
-              int maxHeight = 0, unsigned int clkRate = 1000,
+    NvDecoder(CUcontext cuContext, bool bUseDeviceFrame, cudaVideoCodec eCodec, bool bLowLatency = false,
+              bool bDeviceFramePitched = false, const Rect *pCropRect = nullptr, const Dim *pResizeDim = nullptr,
+              bool extract_user_SEI_Message = false, int maxWidth = 0, int maxHeight = 0, unsigned int clkRate = 1000,
               bool force_zero_latency = false);
     ~NvDecoder();
 
     /**
      *  @brief  This function is used to get the current CUDA context.
      */
-    CUcontext GetContext() { return m_cuContext; }
+    CUcontext GetContext() {
+        return m_cuContext;
+    }
 
     /**
      *  @brief  This function is used to get the output frame width.
@@ -51,8 +53,7 @@ public:
      */
     int GetWidth() {
         LOG_ASSERT(m_nWidth);
-        return (m_eOutputFormat == cudaVideoSurfaceFormat_NV12 ||
-                m_eOutputFormat == cudaVideoSurfaceFormat_P016)
+        return (m_eOutputFormat == cudaVideoSurfaceFormat_NV12 || m_eOutputFormat == cudaVideoSurfaceFormat_P016)
                    ? (m_nWidth + 1) & ~1
                    : m_nWidth;
     }
@@ -96,9 +97,7 @@ public:
      */
     int GetFrameSize() {
         LOG_ASSERT(m_nWidth);
-        return GetWidth() *
-               (m_nLumaHeight + (m_nChromaHeight * m_nNumChromaPlanes)) *
-               m_nBPP;
+        return GetWidth() * (m_nLumaHeight + (m_nChromaHeight * m_nNumChromaPlanes)) * m_nBPP;
     }
 
     /**
@@ -124,8 +123,7 @@ public:
      */
     int GetDeviceFramePitch() {
         LOG_ASSERT(m_nWidth);
-        return m_nDeviceFramePitch ? (int)m_nDeviceFramePitch
-                                   : GetWidth() * m_nBPP;
+        return m_nDeviceFramePitch ? (int)m_nDeviceFramePitch : GetWidth() * m_nBPP;
     }
 
     /**
@@ -148,7 +146,9 @@ public:
     /**
      *   @brief  This function is used to get the YUV chroma format
      */
-    cudaVideoSurfaceFormat GetOutputFormat() { return m_eOutputFormat; }
+    cudaVideoSurfaceFormat GetOutputFormat() {
+        return m_eOutputFormat;
+    }
 
     /**
      *   @brief  This function is used to get information about the video stream
@@ -168,7 +168,9 @@ public:
      *   @brief  This function is used to print information about the video
      * stream
      */
-    std::string GetVideoInfo() const { return m_videoInfo.str(); }
+    std::string GetVideoInfo() const {
+        return m_videoInfo.str();
+    }
 
     /**
      *   @brief  This function decodes a frame and returns the number of frames
@@ -179,8 +181,7 @@ public:
      *   @param  nFlags - CUvideopacketflags for setting decode options
      *   @param  nTimestamp - presentation timestamp
      */
-    int Decode(const uint8_t *pData, int nSize, int nFlags = 0,
-               int64_t nTimestamp = 0);
+    int Decode(const uint8_t *pData, int nSize, int nFlags = 0, int64_t nTimestamp = 0);
 
     /**
      *   @brief  This function returns a decoded frame and timestamp. This
@@ -230,8 +231,12 @@ public:
     // stop the timer
     // double stopTimer() { return m_stDecode_time.Stop(); }
 
-    void setDecoderSessionID(int sessionID) { decoderSessionID = sessionID; }
-    int getDecoderSessionID() { return decoderSessionID; }
+    void setDecoderSessionID(int sessionID) {
+        decoderSessionID = sessionID;
+    }
+    int getDecoderSessionID() {
+        return decoderSessionID;
+    }
 
     // Session overhead refers to decoder initialization and deinitialization
     // time
@@ -243,18 +248,16 @@ public:
     }
 
 private:
-    int decoderSessionID;  // Decoder session identifier. Used to gather session
-                           // level stats.
-    static std::map<int, int64_t>
-        sessionOverHead;  // Records session overhead of
-                          // initialization+deinitialization time. Format is
-                          // (thread id, duration)
+    int decoderSessionID;                           // Decoder session identifier. Used to gather session
+                                                    // level stats.
+    static std::map<int, int64_t> sessionOverHead;  // Records session overhead of
+                                                    // initialization+deinitialization time. Format is
+                                                    // (thread id, duration)
     /**
      * @brief  Callback function to be registered for getting a callback when
      * decoding of sequence starts
      */
-    static int CUDAAPI HandleVideoSequenceProc(void *pUserData,
-                                               CUVIDEOFORMAT *pVideoFormat) {
+    static int CUDAAPI HandleVideoSequenceProc(void *pUserData, CUVIDEOFORMAT *pVideoFormat) {
         return ((NvDecoder *)pUserData)->HandleVideoSequence(pVideoFormat);
     }
 
@@ -262,8 +265,7 @@ private:
      * @brief  Callback function to be registered for getting a callback when a
      * decoded frame is ready to be decoded
      */
-    static int CUDAAPI HandlePictureDecodeProc(void *pUserData,
-                                               CUVIDPICPARAMS *pPicParams) {
+    static int CUDAAPI HandlePictureDecodeProc(void *pUserData, CUVIDPICPARAMS *pPicParams) {
         return ((NvDecoder *)pUserData)->HandlePictureDecode(pPicParams);
     }
 
@@ -271,8 +273,7 @@ private:
      * @brief  Callback function to be registered for getting a callback when a
      * decoded frame is available for display
      */
-    static int CUDAAPI
-    HandlePictureDisplayProc(void *pUserData, CUVIDPARSERDISPINFO *pDispInfo) {
+    static int CUDAAPI HandlePictureDisplayProc(void *pUserData, CUVIDPARSERDISPINFO *pDispInfo) {
         return ((NvDecoder *)pUserData)->HandlePictureDisplay(pDispInfo);
     }
 
@@ -280,8 +281,7 @@ private:
      * @brief  Callback function to be registered for getting a callback to get
      * operating point when AV1 SVC sequence header start.
      */
-    static int CUDAAPI HandleOperatingPointProc(
-        void *pUserData, CUVIDOPERATINGPOINTINFO *pOPInfo) {
+    static int CUDAAPI HandleOperatingPointProc(void *pUserData, CUVIDOPERATINGPOINTINFO *pOPInfo) {
         return ((NvDecoder *)pUserData)->GetOperatingPoint(pOPInfo);
     }
 
@@ -289,8 +289,7 @@ private:
      * @brief  Callback function to be registered for getting a callback when
      * all the unregistered user SEI Messages are parsed for a frame.
      */
-    static int CUDAAPI HandleSEIMessagesProc(
-        void *pUserData, CUVIDSEIMESSAGEINFO *pSEIMessageInfo) {
+    static int CUDAAPI HandleSEIMessagesProc(void *pUserData, CUVIDSEIMESSAGEINFO *pSEIMessageInfo) {
         return ((NvDecoder *)pUserData)->GetSEIMessage(pSEIMessageInfo);
     }
 

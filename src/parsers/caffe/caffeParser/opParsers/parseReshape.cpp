@@ -12,10 +12,8 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parseReshape(INetworkDefinition &network,
-                     const trtcaffe::LayerParameter &msg,
-                     CaffeWeightFactory & /*weightFactory*/,
-                     BlobNameToTensor &tensors) {
+ILayer *parseReshape(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                     CaffeWeightFactory & /*weightFactory*/, BlobNameToTensor &tensors) {
     if (!checkBlobs(msg, 1, 1))
         return nullptr;
 
@@ -26,20 +24,17 @@ ILayer *parseReshape(INetworkDefinition &network,
     const ::trtcaffe::BlobShape &shape = p.shape();
     // Check that N (batch dim) is 0. TensorRT does not support reshape in batch
     // dimension
-    if (network.hasImplicitBatchDimension() && (axis == 0) &&
-        (shape.dim(0) != 0)) {
-        LOG_ERROR("Invalid reshape param. TensorRT does not support reshape in "
-                  "N (batch) dimension");
+    if (network.hasImplicitBatchDimension() && (axis == 0) && (shape.dim(0) != 0)) {
+        LOG_ERROR(
+            "Invalid reshape param. TensorRT does not support reshape in "
+            "N (batch) dimension");
         return nullptr;
     }
 
     // Handle axis and dims parameters
     int axStart = std::max(0, axis - 1);
     int axEnd = p.has_num_axes()
-                    ? std::max(0, axis -
-                                      static_cast<int>(
-                                          network.hasImplicitBatchDimension()) +
-                                      p.num_axes())
+                    ? std::max(0, axis - static_cast<int>(network.hasImplicitBatchDimension()) + p.num_axes())
                     : bottomDims.nbDims;
 
     std::vector<int> reshapeDims;
@@ -77,15 +72,15 @@ ILayer *parseReshape(INetworkDefinition &network,
         if (topDims.d[i] == -1) {
             countMinusOne += 1;
             // Inferred dimension
-            int64_t newDim =
-                parserutils::volume(bottomDims) / -parserutils::volume(topDims);
+            int64_t newDim = parserutils::volume(bottomDims) / -parserutils::volume(topDims);
             topDims.d[i] = newDim;
         }
     }
 
     if (countMinusOne > 1) {
-        LOG_ERROR("Invalid reshape param. At most one axis can be inferred "
-                  "from other dimensions");
+        LOG_ERROR(
+            "Invalid reshape param. At most one axis can be inferred "
+            "from other dimensions");
         return nullptr;
     }
 
@@ -98,4 +93,4 @@ ILayer *parseReshape(INetworkDefinition &network,
     layer->setReshapeDimensions(topDims);
     return layer;
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

@@ -17,8 +17,7 @@ public:
     YoloV6() = default;
     ~YoloV6() = default;
     virtual int preprocess(const std::vector<nv::Image> &images);
-    virtual int postprocess(const std::vector<nv::Image> &images,
-                            std::vector<detections_t> &detections);
+    virtual int postprocess(const std::vector<nv::Image> &images, std::vector<detections_t> &detections);
 
 private:
     float conf_threshold_ = 0.25;

@@ -7,22 +7,20 @@
  *
  * Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
+#include <filesystem>
+#include <vector>
+
 #include "argparse/argparse.hpp"
 #include "base_types.h"
 #include "codecs/jpeg_dec.h"
 #include "codecs/jpeg_enc.h"
 #include "models/yolov6.h"
-#include <filesystem>
-#include <vector>
 
 int main(int argc, char **argv) {
     InitGoogleLogging();
     argparse::ArgumentParser parser(argv[0], std::string("1.0"));
     parser.add_argument("-i", "--image").help("Set image file").required();
-    parser.add_argument("-d", "--device")
-        .help("Run in which device")
-        .default_value(0)
-        .scan<'i', int>();
+    parser.add_argument("-d", "--device").help("Run in which device").default_value(0).scan<'i', int>();
     try {
         parser.parse_args(argc, argv);
     } catch (const std::exception &err) {
@@ -40,8 +38,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    std::string savePath =
-        std::filesystem::current_path() / "encoded_image.jpg";
+    std::string savePath = std::filesystem::current_path() / "encoded_image.jpg";
     nv::JpegEncoder jpeg_enc;
     if (0 != jpeg_enc.Encode(savePath, image)) {
         LOG_ERROR("encode image failed");

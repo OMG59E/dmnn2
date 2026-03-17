@@ -11,7 +11,6 @@
 #include <chrono>
 #include <ctime>
 #include <memory>
-
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -25,12 +24,11 @@ struct padding_info {
 
     padding_info() = default;
     padding_info(size_t width, padding_info::pad_side side, bool truncate)
-        : width_(width),
-          side_(side),
-          truncate_(truncate),
-          enabled_(true) {}
+        : width_(width), side_(side), truncate_(truncate), enabled_(true) {}
 
-    bool enabled() const { return enabled_; }
+    bool enabled() const {
+        return enabled_;
+    }
     size_t width_ = 0;
     pad_side side_ = pad_side::left;
     bool truncate_ = false;
@@ -39,13 +37,10 @@ struct padding_info {
 
 class SPDLOG_API flag_formatter {
 public:
-    explicit flag_formatter(padding_info padinfo)
-        : padinfo_(padinfo) {}
+    explicit flag_formatter(padding_info padinfo) : padinfo_(padinfo) {}
     flag_formatter() = default;
     virtual ~flag_formatter() = default;
-    virtual void format(const details::log_msg &msg,
-                        const std::tm &tm_time,
-                        memory_buf_t &dest) = 0;
+    virtual void format(const details::log_msg &msg, const std::tm &tm_time, memory_buf_t &dest) = 0;
 
 protected:
     padding_info padinfo_;
@@ -66,8 +61,7 @@ class SPDLOG_API pattern_formatter final : public formatter {
 public:
     using custom_flags = std::unordered_map<char, std::unique_ptr<custom_flag_formatter>>;
 
-    explicit pattern_formatter(std::string pattern,
-                               pattern_time_type time_type = pattern_time_type::local,
+    explicit pattern_formatter(std::string pattern, pattern_time_type time_type = pattern_time_type::local,
                                std::string eol = spdlog::details::os::default_eol,
                                custom_flags custom_user_flags = custom_flags());
 
@@ -82,7 +76,7 @@ public:
     void format(const details::log_msg &msg, memory_buf_t &dest) override;
 
     template <typename T, typename... Args>
-    pattern_formatter &add_flag(char flag, Args &&...args) {
+    pattern_formatter &add_flag(char flag, Args &&... args) {
         custom_handlers_[flag] = details::make_unique<T>(std::forward<Args>(args)...);
         return *this;
     }
@@ -106,13 +100,12 @@ private:
     // Extract given pad spec (e.g. %8X)
     // Advance the given it pass the end of the padding spec found (if any)
     // Return padding.
-    static details::padding_info handle_padspec_(std::string::const_iterator &it,
-                                                 std::string::const_iterator end);
+    static details::padding_info handle_padspec_(std::string::const_iterator &it, std::string::const_iterator end);
 
     void compile_pattern_(const std::string &pattern);
 };
 }  // namespace spdlog
 
 #ifdef SPDLOG_HEADER_ONLY
-    #include "pattern_formatter-inl.h"
+#include "pattern_formatter-inl.h"
 #endif

@@ -12,15 +12,12 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parseHardSwish(INetworkDefinition &network,
-                       const trtcaffe::LayerParameter &msg,
-                       CaffeWeightFactory &weightFactory,
-                       BlobNameToTensor &tensors) {
+ILayer *parseHardSwish(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                       CaffeWeightFactory &weightFactory, BlobNameToTensor &tensors) {
     if (!checkBlobs(msg, 1, 1))
         return nullptr;
 
-    auto clip =
-        network.addActivation(*tensors[msg.bottom(0)], ActivationType::kCLIP);
+    auto clip = network.addActivation(*tensors[msg.bottom(0)], ActivationType::kCLIP);
     clip->setAlpha(-3.0f);
     clip->setBeta(3.0f);
 
@@ -40,11 +37,8 @@ ILayer *parseHardSwish(INetworkDefinition &network,
     weightFactory.convert(scale);
     weightFactory.convert(power);
 
-    auto axpy = network.addScale(*clip->getOutput(0), ScaleMode::kUNIFORM,
-                                 shift, scale, power);
-    auto hs =
-        network.addElementWise(*axpy->getOutput(0), *tensors[msg.bottom(0)],
-                               ElementWiseOperation::kPROD);
+    auto axpy = network.addScale(*clip->getOutput(0), ScaleMode::kUNIFORM, shift, scale, power);
+    auto hs = network.addElementWise(*axpy->getOutput(0), *tensors[msg.bottom(0)], ElementWiseOperation::kPROD);
     return hs;
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

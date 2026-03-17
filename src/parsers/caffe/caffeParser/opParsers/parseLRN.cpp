@@ -12,10 +12,8 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parseLRN(INetworkDefinition &network,
-                 const trtcaffe::LayerParameter &msg,
-                 CaffeWeightFactory & /*weightFactory*/,
-                 BlobNameToTensor &tensors) {
+ILayer *parseLRN(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                 CaffeWeightFactory & /*weightFactory*/, BlobNameToTensor &tensors) {
     if (!checkBlobs(msg, 1, 1))
         return nullptr;
 
@@ -27,4 +25,4 @@ ILayer *parseLRN(INetworkDefinition &network,
 
     return network.addLRN(*tensors[msg.bottom(0)], localSize, alpha, beta, k);
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

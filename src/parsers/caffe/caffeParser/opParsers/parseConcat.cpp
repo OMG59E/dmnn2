@@ -12,20 +12,19 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parseConcat(INetworkDefinition &network,
-                    const trtcaffe::LayerParameter &msg,
-                    CaffeWeightFactory & /*weightFactory*/,
-                    BlobNameToTensor &tensors) {
+ILayer *parseConcat(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                    CaffeWeightFactory & /*weightFactory*/, BlobNameToTensor &tensors) {
     const trtcaffe::ConcatParameter &p = msg.concat_param();
-    bool hasAxis = p.has_axis(); // optional parameter
+    bool hasAxis = p.has_axis();  // optional parameter
 
     if (hasAxis && p.axis() < 0) {
         LOG_ERROR("Concat negative axis is not supported.");
         return nullptr;
     }
     if (network.hasImplicitBatchDimension() && p.axis() == 0) {
-        LOG_ERROR("Concat across batch axis with implicit batch dimensions is "
-                  "not supported.");
+        LOG_ERROR(
+            "Concat across batch axis with implicit batch dimensions is "
+            "not supported.");
         return nullptr;
     }
 
@@ -39,9 +38,8 @@ ILayer *parseConcat(INetworkDefinition &network,
     // Rely on the default axis setting inside TRT which takes into account
     // NPCHW and higher dimensional input.
     if (hasAxis)
-        concat->setAxis(p.axis() -
-                        static_cast<int>(network.hasImplicitBatchDimension()));
+        concat->setAxis(p.axis() - static_cast<int>(network.hasImplicitBatchDimension()));
 
     return concat;
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

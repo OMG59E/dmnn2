@@ -12,10 +12,8 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parseCrop(INetworkDefinition &network,
-                  const trtcaffe::LayerParameter &msg,
-                  CaffeWeightFactory & /*weightFactory*/,
-                  BlobNameToTensor &tensors) {
+ILayer *parseCrop(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                  CaffeWeightFactory & /*weightFactory*/, BlobNameToTensor &tensors) {
     // To crop, elements of the first bottom are selected to fit the dimensions
     // of the second, reference bottom. The crop is configured by
     // - the crop `axis` to pick the dimensions for cropping
@@ -35,13 +33,11 @@ ILayer *parseCrop(INetworkDefinition &network,
     // ONLY IMPLEMENT SPATIAL CROPPING
     // IF CROP LAYER IS NOT SPATIAL CROP, ABORT
     const trtcaffe::CropParameter &p = msg.crop_param();
-    nv::DimsCHW inputDims =
-        parserutils::getCHW(tensors[msg.bottom(0)]->getDimensions());
-    nv::DimsCHW refDims =
-        parserutils::getCHW(tensors[msg.bottom(1)]->getDimensions());
-    bool hasAxis = p.has_axis();         // optional parameter
-    int axis = hasAxis ? p.axis() : 2;   // default is 2 - spatial crop
-    axis = (axis < 0) ? 4 + axis : axis; // axis negative number correction
+    nv::DimsCHW inputDims = parserutils::getCHW(tensors[msg.bottom(0)]->getDimensions());
+    nv::DimsCHW refDims = parserutils::getCHW(tensors[msg.bottom(1)]->getDimensions());
+    bool hasAxis = p.has_axis();          // optional parameter
+    int axis = hasAxis ? p.axis() : 2;    // default is 2 - spatial crop
+    axis = (axis < 0) ? 4 + axis : axis;  // axis negative number correction
 
     // acceptable axis values: 2, 3, -1, -2
     // unacceptable axis values: 0, 1, -3, -4 and anything else
@@ -61,12 +57,10 @@ ILayer *parseCrop(INetworkDefinition &network,
     // this is only valid for acceptable corrected axis values
     // if !axis_abort then invariant that num_dims == 1 || num_dims == 2
     int num_dims = 4 - axis;
-    bool offset_abort =
-        (num_offsets != 0 && num_offsets != 1 && num_offsets != num_dims);
+    bool offset_abort = (num_offsets != 0 && num_offsets != 1 && num_offsets != num_dims);
 
     if (axis_abort) {
-        LOG_ERROR(
-            "Invalid axis in crop layer - only spatial cropping is supported");
+        LOG_ERROR("Invalid axis in crop layer - only spatial cropping is supported");
         return nullptr;
     }
 
@@ -109,4 +103,4 @@ ILayer *parseCrop(INetworkDefinition &network,
     DimsHW postPadding = DimsHW{postPadHeight, postPadWidth};
     return network.addPadding(*tensors[msg.bottom(0)], prePadding, postPadding);
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

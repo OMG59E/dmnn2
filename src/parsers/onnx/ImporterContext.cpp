@@ -13,8 +13,10 @@
  */
 
 #include "ImporterContext.hpp"
-#include "NvInferVersion.h"
+
 #include <sstream>
+
+#include "NvInferVersion.h"
 
 #if !defined(_WIN32)
 #include <dlfcn.h>
@@ -25,16 +27,18 @@
 #include <windows.h>
 #endif  // !defined(_WIN32)
 
-#define RT_ASSERT(cond)                                                        \
-    do {                                                                       \
-        if (!(cond)) {                                                         \
-            throw std::runtime_error("Assertion " #cond " failed!");           \
-        }                                                                      \
+#define RT_ASSERT(cond)                                              \
+    do {                                                             \
+        if (!(cond)) {                                               \
+            throw std::runtime_error("Assertion " #cond " failed!"); \
+        }                                                            \
     } while (0)
 
 namespace onnx2trt {
 
-void ImporterContext::pushBaseNameScope() { mBaseNameScopeStack.push_back({}); }
+void ImporterContext::pushBaseNameScope() {
+    mBaseNameScopeStack.push_back({});
+}
 
 void ImporterContext::popBaseNameScope() {
     auto &tensorMap = tensors();
@@ -48,9 +52,7 @@ void ImporterContext::popBaseNameScope() {
     mBaseNameScopeStack.pop_back();
 }
 
-void ImporterContext::registerTensor(TensorOrWeights tensor,
-                                     std::string const &basename,
-                                     bool const checkUniqueName) {
+void ImporterContext::registerTensor(TensorOrWeights tensor, std::string const &basename, bool const checkUniqueName) {
     // TRT requires unique tensor names.
     std::string const &uniqueName = generateUniqueName(mTensorNames, basename);
 
@@ -59,16 +61,13 @@ void ImporterContext::registerTensor(TensorOrWeights tensor,
             tensor.tensor().setName(uniqueName.c_str());
             // Logging macro refers to ctx.
             auto *ctx = this;
-            LOG_VERBOSE("Registering tensor: "
-                        << uniqueName << " for ONNX tensor: " << basename);
+            LOG_VERBOSE("Registering tensor: " << uniqueName << " for ONNX tensor: " << basename);
         } else if (tensor.is_weights()) {
             auto const &weights = tensor.weights();
             if (tensor.weights().type == onnx::TensorProto::INT64) {
-                tensor = ShapedWeights{
-                    onnx::TensorProto::INT32,
-                    convertINT64(reinterpret_cast<int64_t *>(weights.values),
-                                 weights.shape, this),
-                    weights.shape};
+                tensor = ShapedWeights{onnx::TensorProto::INT32,
+                                       convertINT64(reinterpret_cast<int64_t *>(weights.values), weights.shape, this),
+                                       weights.shape};
             }
             // It may be possible for nested subgraphs to have different values
             // for the same initializer. For multiple name scopes - use unique
@@ -87,8 +86,8 @@ void ImporterContext::registerTensor(TensorOrWeights tensor,
     bool nameIsDuplicate = false;
     if (!mBaseNameScopeStack.empty()) {
         // Remember original binding so it can be restored when scope is popped.
-        auto const q = mBaseNameScopeStack.back().emplace(
-            nameToCheck, std::make_pair(p.second, std::move(p.first->second)));
+        auto const q =
+            mBaseNameScopeStack.back().emplace(nameToCheck, std::make_pair(p.second, std::move(p.first->second)));
         // Check that scope did not already have a binding for basename.
         nameIsDuplicate = !q.second;
     } else {
@@ -97,36 +96,28 @@ void ImporterContext::registerTensor(TensorOrWeights tensor,
         nameIsDuplicate = !p.second && !p.first->second.isNullTensor();
     }
     if (nameIsDuplicate) {
-        throw std::runtime_error("ONNX graph has duplicate tensor name: " +
-                                 nameToCheck);
+        throw std::runtime_error("ONNX graph has duplicate tensor name: " + nameToCheck);
     }
     p.first->second = std::move(tensor);
 }
 
-void ImporterContext::registerLayer(nvinfer1::ILayer *layer,
-                                    std::string const &basename,
-                                    onnx::NodeProto const *node) {
+void ImporterContext::registerLayer(nvinfer1::ILayer *layer, std::string const &basename, onnx::NodeProto const *node) {
     // No layer will be added for Constant nodes in ONNX.
     if (layer) {
         std::string const name = basename.empty() ? layer->getName() : basename;
         std::string const &uniqueName = generateUniqueName(mLayerNames, name);
 
         auto *ctx = this;  // To enable logging.
-        LOG_VERBOSE("Registering layer: " << uniqueName
-                                          << " for ONNX node: " << basename);
+        LOG_VERBOSE("Registering layer: " << uniqueName << " for ONNX node: " << basename);
 
         layer->setName(uniqueName.c_str());
         if (layer->getType() == nvinfer1::LayerType::kCONSTANT) {
-            if (basename != uniqueName &&
-                mConstantLayers.find(uniqueName) != mConstantLayers.end()) {
-                LOG_ERROR("Constant layer: " << uniqueName
-                                             << " can be a duplicate of: "
-                                             << basename);
+            if (basename != uniqueName && mConstantLayers.find(uniqueName) != mConstantLayers.end()) {
+                LOG_ERROR("Constant layer: " << uniqueName << " can be a duplicate of: " << basename);
                 assert(!"Internal error: duplicate constant layers for the "
                         "same weights");
             }
-            mConstantLayers.insert(
-                {uniqueName, static_cast<nvinfer1::IConstantLayer *>(layer)});
+            mConstantLayers.insert({uniqueName, static_cast<nvinfer1::IConstantLayer *>(layer)});
         }
     }
     if (node != nullptr) {
@@ -134,8 +125,7 @@ void ImporterContext::registerLayer(nvinfer1::ILayer *layer,
     }
 }
 
-void ImporterContext::registerLayer(nvinfer1::ILayer *layer,
-                                    onnx::NodeProto const &node) {
+void ImporterContext::registerLayer(nvinfer1::ILayer *layer, onnx::NodeProto const &node) {
     std::string const &basename = getNodeName(node);
     registerLayer(layer, basename, &node);
 }
@@ -169,8 +159,7 @@ public:
 #if !defined(_WIN32)
             errorStr = std::string{" due to "} + std::string{dlerror()};
 #endif
-            throw std::runtime_error("Unable to open library: " + name +
-                                     errorStr);
+            throw std::runtime_error("Unable to open library: " + name + errorStr);
         }
     }
 
@@ -180,8 +169,7 @@ public:
     ~DynamicLibrary() {
         try {
 #if defined(_WIN32)
-            RT_ASSERT(
-                static_cast<bool>(FreeLibrary(static_cast<HMODULE>(mHandle))));
+            RT_ASSERT(static_cast<bool>(FreeLibrary(static_cast<HMODULE>(mHandle))));
 #else
             RT_ASSERT(dlclose(mHandle) == 0);
 #endif
@@ -202,8 +190,7 @@ public:
         std::string path(kMAX_PATH_LEN,
                          '\0');  // since C++11, std::string storage is
                                  // guaranteed to be contiguous
-        auto const pathLen = GetModuleFileNameA(static_cast<HMODULE>(mHandle),
-                                                &path[0], kMAX_PATH_LEN);
+        auto const pathLen = GetModuleFileNameA(static_cast<HMODULE>(mHandle), &path[0], kMAX_PATH_LEN);
         RT_ASSERT(GetLastError() == ERROR_SUCCESS);
         path.resize(pathLen);
         path.shrink_to_fit();
@@ -226,13 +213,11 @@ std::string getOSLibraryPath(std::string const &osLibName) {
 
 }  // namespace
 
-void ImporterContext::addUsedVCPluginLibrary(
-    onnx::NodeProto const &node, char const *pluginName,
-    char const *pluginLib) {
+void ImporterContext::addUsedVCPluginLibrary(onnx::NodeProto const &node, char const *pluginName,
+                                             char const *pluginLib) {
     auto *ctx = this;  // For logging
     auto osPluginLibName = getOSLibraryName(pluginLib);
-    LOG_VERBOSE("Node " << getNodeName(node) << " requires plugin "
-                        << pluginName << " which is provided by "
+    LOG_VERBOSE("Node " << getNodeName(node) << " requires plugin " << pluginName << " which is provided by "
                         << osPluginLibName);
     mLogicalVCPluginLibraries.insert(osPluginLibName);
 }
@@ -244,8 +229,7 @@ std::vector<std::string> ImporterContext::getUsedVCPluginLibraries() {
     ret.reserve(mLogicalVCPluginLibraries.size());
     for (auto const &l : mLogicalVCPluginLibraries) {
         auto osLibPath = getOSLibraryPath(l);
-        LOG_VERBOSE("Library " << l << " located on filesystem as "
-                               << osLibPath);
+        LOG_VERBOSE("Library " << l << " located on filesystem as " << osLibPath);
         ret.emplace_back(std::move(osLibPath));
     }
     return ret;

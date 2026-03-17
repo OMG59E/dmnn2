@@ -17,10 +17,7 @@ int main(int argc, char **argv) {
     InitGoogleLogging();
     argparse::ArgumentParser parser(argv[0], std::string("1.0"));
     parser.add_argument("-i", "--input").help("Set video file").required();
-    parser.add_argument("-d", "--device")
-        .help("Run in which device")
-        .default_value(0)
-        .scan<'i', int>();
+    parser.add_argument("-d", "--device").help("Run in which device").default_value(0).scan<'i', int>();
     try {
         parser.parse_args(argc, argv);
     } catch (const std::exception &err) {
@@ -42,8 +39,7 @@ int main(int argc, char **argv) {
     CUdevice cuDevice = 0;
     CUDA_DRVAPI_CALL(cuDeviceGet(&cuDevice, device_id));
     char szDeviceName[80];
-    CUDA_DRVAPI_CALL(
-        cuDeviceGetName(szDeviceName, sizeof(szDeviceName), cuDevice));
+    CUDA_DRVAPI_CALL(cuDeviceGetName(szDeviceName, sizeof(szDeviceName), cuDevice));
     LOG_INFO("GPU in use: {}", szDeviceName);
     CUDA_DRVAPI_CALL(cuCtxCreate(&cuContext, 0, cuDevice));
     nv::Rect cropRect;
@@ -52,10 +48,8 @@ int main(int argc, char **argv) {
     bool bLowLatency = true;
     bool bDeviceFramePitched = false;
     bool bExtractUserSEIMessage = false;
-    nv::NvDecoder dec(cuContext, bUseDeviceFrame,
-                      nv::FFmpeg2NvCodecId(demux.video_codec()), bLowLatency,
-                      bDeviceFramePitched, &cropRect, &resizeDim,
-                      bExtractUserSEIMessage);
+    nv::NvDecoder dec(cuContext, bUseDeviceFrame, nv::FFmpeg2NvCodecId(demux.video_codec()), bLowLatency,
+                      bDeviceFramePitched, &cropRect, &resizeDim, bExtractUserSEIMessage);
 
     uint8_t *data = nullptr;
     int size = 0;

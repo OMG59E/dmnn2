@@ -7,8 +7,9 @@
  * @
  * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
-#include "caffeParser/caffeParser.h"
 #include <NvCaffeParser.h>
+
+#include "caffeParser/caffeParser.h"
 
 using namespace nvcaffeparser1;
 

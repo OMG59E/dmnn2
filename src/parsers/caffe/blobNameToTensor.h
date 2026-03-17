@@ -11,15 +11,15 @@
 #ifndef TRT_CAFFE_PARSER_BLOB_NAME_TO_TENSOR_H
 #define TRT_CAFFE_PARSER_BLOB_NAME_TO_TENSOR_H
 
-#include <map>
-#include <string>
-
 #include <NvCaffeParser.h>
 #include <NvInfer.h>
 
+#include <map>
+#include <string>
+
 namespace nvcaffeparser1 {
 class BlobNameToTensor : public IBlobNameToTensor {
-  public:
+public:
     ~BlobNameToTensor() override = default;
 
     void add(const std::string &name, nvinfer1::ITensor *tensor) {
@@ -43,11 +43,13 @@ class BlobNameToTensor : public IBlobNameToTensor {
         }
     }
 
-    bool isOK() { return !mError; }
+    bool isOK() {
+        return !mError;
+    }
 
-  private:
+private:
     std::map<std::string, nvinfer1::ITensor *> mMap;
     bool mError{false};
 };
-} // namespace nvcaffeparser1
-#endif // TRT_CAFFE_PARSER_BLOB_NAME_TO_TENSOR_H
+}  // namespace nvcaffeparser1
+#endif  // TRT_CAFFE_PARSER_BLOB_NAME_TO_TENSOR_H

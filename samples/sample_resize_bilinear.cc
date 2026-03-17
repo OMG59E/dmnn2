@@ -7,21 +7,19 @@
  *
  * Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
+#include <filesystem>
+
 #include "argparse/argparse.hpp"
 #include "codecs/jpeg_dec.h"
 #include "codecs/jpeg_enc.h"
 #include "imgproc/resize.h"
 #include "logging.h"
-#include <filesystem>
 
 int main(int argc, char **argv) {
     InitGoogleLogging();
     argparse::ArgumentParser parser(argv[0], std::string("1.0"));
     parser.add_argument("-i", "--input").help("Set image file").required();
-    parser.add_argument("-d", "--device")
-        .help("Run in which device")
-        .default_value(0)
-        .scan<'i', int>();
+    parser.add_argument("-d", "--device").help("Run in which device").default_value(0).scan<'i', int>();
     try {
         parser.parse_args(argc, argv);
     } catch (const std::exception &err) {
@@ -39,8 +37,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    std::string savePath =
-        std::filesystem::current_path() / "resized_image.jpg";
+    std::string savePath = std::filesystem::current_path() / "resized_image.jpg";
 
     nv::Image dst;
     dst.create(image.h() * 2, image.w() * 2, true, image.colorType);

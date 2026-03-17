@@ -13,6 +13,7 @@
 
 #include <NvInfer.h>
 #include <stddef.h>
+
 #include <vector>
 
 //!
@@ -26,8 +27,7 @@
 #define NV_ONNX_PARSER_PATCH 0
 
 static constexpr int32_t NV_ONNX_PARSER_VERSION =
-    ((NV_ONNX_PARSER_MAJOR * 10000) + (NV_ONNX_PARSER_MINOR * 100) +
-     NV_ONNX_PARSER_PATCH);
+    ((NV_ONNX_PARSER_MAJOR * 10000) + (NV_ONNX_PARSER_MINOR * 100) + NV_ONNX_PARSER_PATCH);
 
 //!
 //! \typedef SubGraph_t
@@ -52,7 +52,8 @@ typedef std::vector<SubGraph_t> SubGraphCollection_t;
 //!
 namespace nvonnxparser {
 
-template <typename T> constexpr inline int32_t EnumMax();
+template <typename T>
+constexpr inline int32_t EnumMax();
 
 //!
 //! \enum ErrorCode
@@ -76,7 +77,10 @@ enum class ErrorCode : int {
 //!
 //! \see ErrorCode
 //!
-template <> constexpr inline int32_t EnumMax<ErrorCode>() { return 9; }
+template <>
+constexpr inline int32_t EnumMax<ErrorCode>() {
+    return 9;
+}
 
 //!
 //! \brief Represents one or more OnnxParserFlag values using binary OR
@@ -102,7 +106,10 @@ enum class OnnxParserFlag : int32_t {
 //!
 //! \see OnnxParserFlag
 //!
-template <> constexpr inline int32_t EnumMax<OnnxParserFlag>() { return 1; }
+template <>
+constexpr inline int32_t EnumMax<OnnxParserFlag>() {
+    return 1;
+}
 
 //!
 //! \class IParserError
@@ -163,8 +170,7 @@ public:
     //! \return true if the model was parsed successfully
     //! \see getNbErrors() getError()
     //!
-    virtual bool parse(void const *serialized_onnx_model,
-                       size_t serialized_onnx_model_size,
+    virtual bool parse(void const *serialized_onnx_model, size_t serialized_onnx_model_size,
                        const char *model_path = nullptr) = 0;
 
     //!
@@ -193,10 +199,8 @@ public:
     //! weights if required
     //! \return true if the model is supported
     //!
-    virtual bool supportsModel(void const *serialized_onnx_model,
-                               size_t serialized_onnx_model_size,
-                               SubGraphCollection_t &sub_graph_collection,
-                               const char *model_path = nullptr) = 0;
+    virtual bool supportsModel(void const *serialized_onnx_model, size_t serialized_onnx_model_size,
+                               SubGraphCollection_t &sub_graph_collection, const char *model_path = nullptr) = 0;
 
     //!
     //!\brief Parse a serialized ONNX model into the TensorRT network
@@ -208,9 +212,7 @@ public:
     //! \return true if the model was parsed successfully
     //! \see getNbErrors() getError()
     //!
-    virtual bool
-    parseWithWeightDescriptors(void const *serialized_onnx_model,
-                               size_t serialized_onnx_model_size) = 0;
+    virtual bool parseWithWeightDescriptors(void const *serialized_onnx_model, size_t serialized_onnx_model_size) = 0;
 
     //!
     //!\brief Returns whether the specified operator may be supported by the
@@ -275,8 +277,7 @@ public:
     //! valid until the next call to parse(), supportsModel(), parseFromFile(),
     //! or parseWithWeightDescriptors().
     //!
-    virtual char const *const *
-    getUsedVCPluginLibraries(int64_t &nbPluginLibs) const noexcept = 0;
+    virtual char const *const *getUsedVCPluginLibraries(int64_t &nbPluginLibs) const noexcept = 0;
 
     //!
     //! \brief Set the parser flags.
@@ -331,8 +332,7 @@ public:
 
 }  // namespace nvonnxparser
 
-extern "C" TENSORRTAPI void *
-createNvOnnxParser_INTERNAL(void *network, void *logger, int version);
+extern "C" TENSORRTAPI void *createNvOnnxParser_INTERNAL(void *network, void *logger, int version);
 extern "C" TENSORRTAPI int getNvOnnxParserVersion();
 
 namespace nvonnxparser {
@@ -355,10 +355,8 @@ namespace {
 //!
 //! \see IParser
 //!
-inline IParser *createParser(nvinfer1::INetworkDefinition &network,
-                             nvinfer1::ILogger &logger) {
-    return static_cast<IParser *>(
-        createNvOnnxParser_INTERNAL(&network, &logger, NV_ONNX_PARSER_VERSION));
+inline IParser *createParser(nvinfer1::INetworkDefinition &network, nvinfer1::ILogger &logger) {
+    return static_cast<IParser *>(createNvOnnxParser_INTERNAL(&network, &logger, NV_ONNX_PARSER_VERSION));
 }
 
 }  // namespace

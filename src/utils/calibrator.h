@@ -9,17 +9,18 @@
  */
 #ifndef ALGORITHMS_CALIBRATOR_H
 #define ALGORITHMS_CALIBRATOR_H
-#include "base_types.h"
-#include "error_check.h"
 #include <NvInfer.h>
+
 #include <map>
 #include <vector>
+
+#include "base_types.h"
+#include "error_check.h"
 
 namespace nv {
 class DECLSPEC_API BatchStream {
 public:
-    BatchStream(const std::string &calibration_data,
-                nvinfer1::INetworkDefinition const *network, int batch_size,
+    BatchStream(const std::string &calibration_data, nvinfer1::INetworkDefinition const *network, int batch_size,
                 int max_batch_idx);
     ~BatchStream();
     bool getBatch(void *bindings[], const char *names[], int nbBindings);
@@ -37,20 +38,15 @@ public:
     std::string calibration_data_;
 };
 
-class DECLSPEC_API Int8EntropyCalibrator
-    : public nvinfer1::IInt8EntropyCalibrator2 {
+class DECLSPEC_API Int8EntropyCalibrator : public nvinfer1::IInt8EntropyCalibrator2 {
 public:
-    Int8EntropyCalibrator(const std::string &calibration_data,
-                          nvinfer1::INetworkDefinition const *network,
-                          int batch_size, int max_batch_idx,
-                          bool read_cache = true);
+    Int8EntropyCalibrator(const std::string &calibration_data, nvinfer1::INetworkDefinition const *network,
+                          int batch_size, int max_batch_idx, bool read_cache = true);
     virtual ~Int8EntropyCalibrator() override;
     int getBatchSize() const noexcept override;
-    bool getBatch(void *bindings[], const char *names[],
-                  int nbBindings) noexcept override;
+    bool getBatch(void *bindings[], const char *names[], int nbBindings) noexcept override;
     const void *readCalibrationCache(size_t &length) noexcept override;
-    void writeCalibrationCache(const void *cache,
-                               size_t length) noexcept override;
+    void writeCalibrationCache(const void *cache, size_t length) noexcept override;
 
 private:
     BatchStream *batch_stream_{nullptr};

@@ -17,8 +17,7 @@ public:
     YoloV5() = default;
     ~YoloV5() = default;
     virtual int preprocess(const std::vector<nv::Image> &images);
-    virtual int postprocess(const std::vector<nv::Image> &images,
-                            std::vector<detections_t> &detections);
+    virtual int postprocess(const std::vector<nv::Image> &images, std::vector<detections_t> &detections);
 
 private:
     int min_wh_{2};

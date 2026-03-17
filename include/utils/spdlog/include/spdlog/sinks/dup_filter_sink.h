@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "dist_sink.h"
 #include <spdlog/details/log_msg.h>
 #include <spdlog/details/null_mutex.h>
 
@@ -11,6 +10,8 @@
 #include <cstdio>
 #include <mutex>
 #include <string>
+
+#include "dist_sink.h"
 
 // Duplicate message removal sink.
 // Skip the message if previous one is identical and less than "max_skip_duration" have passed
@@ -42,8 +43,7 @@ public:
     template <class Rep, class Period>
     explicit dup_filter_sink(std::chrono::duration<Rep, Period> max_skip_duration,
                              level::level_enum notification_level = level::info)
-        : max_skip_duration_{max_skip_duration},
-          log_level_{notification_level} {}
+        : max_skip_duration_{max_skip_duration}, log_level_{notification_level} {}
 
 protected:
     std::chrono::microseconds max_skip_duration_;
@@ -62,8 +62,8 @@ protected:
         // log the "skipped.." message
         if (skip_counter_ > 0) {
             char buf[64];
-            auto msg_size = ::snprintf(buf, sizeof(buf), "Skipped %u duplicate messages..",
-                                       static_cast<unsigned>(skip_counter_));
+            auto msg_size =
+                ::snprintf(buf, sizeof(buf), "Skipped %u duplicate messages..", static_cast<unsigned>(skip_counter_));
             if (msg_size > 0 && static_cast<size_t>(msg_size) < sizeof(buf)) {
                 details::log_msg skipped_msg{msg.source, msg.logger_name, log_level_,
                                              string_view_t{buf, static_cast<size_t>(msg_size)}};

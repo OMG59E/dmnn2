@@ -12,13 +12,10 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parseSigmoid(INetworkDefinition &network,
-                     const trtcaffe::LayerParameter &msg,
-                     CaffeWeightFactory & /*weightFactory*/,
-                     BlobNameToTensor &tensors) {
+ILayer *parseSigmoid(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                     CaffeWeightFactory & /*weightFactory*/, BlobNameToTensor &tensors) {
     if (!checkBlobs(msg, 1, 1))
         return nullptr;
-    return network.addActivation(*tensors[msg.bottom(0)],
-                                 ActivationType::kSIGMOID);
+    return network.addActivation(*tensors[msg.bottom(0)], ActivationType::kSIGMOID);
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

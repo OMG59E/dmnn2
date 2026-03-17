@@ -8,12 +8,12 @@
  * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
 #pragma once
-#include "base_types.h"
 #include <algorithm>
 #include <vector>
 
-inline float bbox_overlap(const nv::BoundingBox &vi,
-                          const nv::BoundingBox &vo) {
+#include "base_types.h"
+
+inline float bbox_overlap(const nv::BoundingBox &vi, const nv::BoundingBox &vo) {
     int xx1 = std::max(vi.x1, vo.x1);
     int yy1 = std::max(vi.y1, vo.y1);
     int xx2 = std::min(vi.x2, vo.x2);
@@ -24,19 +24,15 @@ inline float bbox_overlap(const nv::BoundingBox &vi,
 
     int area = w * h;
 
-    float dist = float(area) / float((vi.x2 - vi.x1) * (vi.y2 - vi.y1) +
-                                     (vo.y2 - vo.y1) * (vo.x2 - vo.x1) - area);
+    float dist = float(area) / float((vi.x2 - vi.x1) * (vi.y2 - vi.y1) + (vo.y2 - vo.y1) * (vo.x2 - vo.x1) - area);
 
     return dist;
 }
 
-static int non_max_suppression(std::vector<nv::detection_t> &detections,
-                               const float iou_threshold) {
+static int non_max_suppression(std::vector<nv::detection_t> &detections, const float iou_threshold) {
     // sort
     std::sort(detections.begin(), detections.end(),
-              [](const nv::detection_t &d1, const nv::detection_t &d2) {
-                  return d1.score > d2.score;
-              });
+              [](const nv::detection_t &d1, const nv::detection_t &d2) { return d1.score > d2.score; });
 
     // nms
     std::vector<nv::detection_t> keep_detections;

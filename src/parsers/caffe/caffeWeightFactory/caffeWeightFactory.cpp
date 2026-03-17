@@ -8,6 +8,7 @@
  * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
 #include "caffeWeightFactory.h"
+
 #include "../../common/half.h"
 #include "error_check.h"
 
@@ -32,10 +33,8 @@ void *convertInternal(void **ptr, int64_t count, bool *mOK) {
     auto *oPtr = static_cast<OUTPUT *>(malloc(count * sizeof(OUTPUT)));
     for (int i = 0; i < count; ++i) {
         if (static_cast<OUTPUT>(iPtr[i]) > std::numeric_limits<OUTPUT>::max() ||
-            static_cast<OUTPUT>(iPtr[i]) <
-                std::numeric_limits<OUTPUT>::lowest()) {
-            LOG_ERROR("Weight {} is outside of [{}, {}]",
-                      std::to_string(iPtr[i]),
+            static_cast<OUTPUT>(iPtr[i]) < std::numeric_limits<OUTPUT>::lowest()) {
+            LOG_ERROR("Weight {} is outside of [{}, {}]", std::to_string(iPtr[i]),
                       std::to_string(std::numeric_limits<OUTPUT>::lowest()),
                       std::to_string(std::numeric_limits<OUTPUT>::max()));
             if (mOK) {
@@ -49,31 +48,32 @@ void *convertInternal(void **ptr, int64_t count, bool *mOK) {
     return oPtr;
 }
 
-CaffeWeightFactory::CaffeWeightFactory(const trtcaffe::NetParameter &msg,
-                                       DataType dataType,
-                                       std::vector<void *> &tmpAllocs,
-                                       bool isInitialized)
-    : mMsg(msg), mTmpAllocs(tmpAllocs), mDataType(dataType),
-      mInitialized(isInitialized) {
+CaffeWeightFactory::CaffeWeightFactory(const trtcaffe::NetParameter &msg, DataType dataType,
+                                       std::vector<void *> &tmpAllocs, bool isInitialized)
+    : mMsg(msg), mTmpAllocs(tmpAllocs), mDataType(dataType), mInitialized(isInitialized) {
     mRef = std::unique_ptr<trtcaffe::NetParameter>(new trtcaffe::NetParameter);
 }
 
-DataType CaffeWeightFactory::getDataType() const { return mDataType; }
+DataType CaffeWeightFactory::getDataType() const {
+    return mDataType;
+}
 
 size_t CaffeWeightFactory::getDataTypeSize() const {
     switch (getDataType()) {
-    case DataType::kFLOAT:
-    case DataType::kINT32:
-        return 4;
-    case DataType::kHALF:
-        return 2;
-    case DataType::kINT8:
-        return 1;
+        case DataType::kFLOAT:
+        case DataType::kINT32:
+            return 4;
+        case DataType::kHALF:
+            return 2;
+        case DataType::kINT8:
+            return 1;
     }
     return 0;
 }
 
-std::vector<void *> &CaffeWeightFactory::getTmpAllocs() { return mTmpAllocs; }
+std::vector<void *> &CaffeWeightFactory::getTmpAllocs() {
+    return mTmpAllocs;
+}
 
 int CaffeWeightFactory::getBlobsSize(const std::string &layerName) {
     for (int i = 0, n = mMsg.layer_size(); i < n; ++i) {
@@ -84,19 +84,16 @@ int CaffeWeightFactory::getBlobsSize(const std::string &layerName) {
     return 0;
 }
 
-const trtcaffe::BlobProto *
-CaffeWeightFactory::getBlob(const std::string &layerName, int index) {
+const trtcaffe::BlobProto *CaffeWeightFactory::getBlob(const std::string &layerName, int index) {
     if (mMsg.layer_size() > 0) {
         for (int i = 0, n = mMsg.layer_size(); i < n; i++) {
-            if (mMsg.layer(i).name() == layerName &&
-                index < mMsg.layer(i).blobs_size()) {
+            if (mMsg.layer(i).name() == layerName && index < mMsg.layer(i).blobs_size()) {
                 return &mMsg.layer(i).blobs(index);
             }
         }
     } else {
         for (int i = 0, n = mMsg.layers_size(); i < n; i++) {
-            if (mMsg.layers(i).name() == layerName &&
-                index < mMsg.layers(i).blobs_size()) {
+            if (mMsg.layers(i).name() == layerName && index < mMsg.layers(i).blobs_size()) {
                 return &mMsg.layers(i).blobs(index);
             }
         }
@@ -104,8 +101,7 @@ CaffeWeightFactory::getBlob(const std::string &layerName, int index) {
     return nullptr;
 }
 
-std::vector<Weights>
-CaffeWeightFactory::getAllWeights(const std::string &layerName) {
+std::vector<Weights> CaffeWeightFactory::getAllWeights(const std::string &layerName) {
     std::vector<Weights> v;
     for (int i = 0;; i++) {
         auto b = getBlob(layerName, i);
@@ -119,8 +115,7 @@ CaffeWeightFactory::getAllWeights(const std::string &layerName) {
     return v;
 }
 
-Weights CaffeWeightFactory::operator()(const std::string &layerName,
-                                       WeightType weightType) {
+Weights CaffeWeightFactory::operator()(const std::string &layerName, WeightType weightType) {
     const trtcaffe::BlobProto *blobMsg = getBlob(layerName, int(weightType));
     if (!blobMsg) {
         LOG_ERROR("Weights for layer {} doesn't exist", layerName);
@@ -133,13 +128,11 @@ Weights CaffeWeightFactory::operator()(const std::string &layerName,
 void CaffeWeightFactory::convert(Weights &weights, DataType targetType) {
     void *tmpAlloc{nullptr};
     if (weights.type == DataType::kFLOAT && targetType == DataType::kHALF) {
-        tmpAlloc = convertInternal<float, float16>(
-            const_cast<void **>(&weights.values), weights.count, &mOK);
+        tmpAlloc = convertInternal<float, float16>(const_cast<void **>(&weights.values), weights.count, &mOK);
         weights.type = targetType;
     }
     if (weights.type == DataType::kHALF && targetType == DataType::kFLOAT) {
-        tmpAlloc = convertInternal<float16, float>(
-            const_cast<void **>(&weights.values), weights.count, &mOK);
+        tmpAlloc = convertInternal<float16, float>(const_cast<void **>(&weights.values), weights.count, &mOK);
         weights.type = targetType;
     }
     if (tmpAlloc) {
@@ -151,62 +144,63 @@ void CaffeWeightFactory::convert(Weights &weights) {
     convert(weights, getDataType());
 }
 
-bool CaffeWeightFactory::isOK() { return mOK; }
+bool CaffeWeightFactory::isOK() {
+    return mOK;
+}
 
-bool CaffeWeightFactory::isInitialized() { return mInitialized; }
+bool CaffeWeightFactory::isInitialized() {
+    return mInitialized;
+}
 
 Weights CaffeWeightFactory::getNullWeights() {
     return Weights{mDataType, nullptr, 0};
 }
 
-Weights CaffeWeightFactory::allocateWeights(
-    int64_t elems, std::uniform_real_distribution<float> distribution) {
+Weights CaffeWeightFactory::allocateWeights(int64_t elems, std::uniform_real_distribution<float> distribution) {
     void *data = malloc(elems * getDataTypeSize());
 
     switch (getDataType()) {
-    case DataType::kFLOAT:
-        for (int64_t i = 0; i < elems; ++i) {
-            ((float *)data)[i] = distribution(generator);
-        }
-        break;
-    case DataType::kHALF:
-        for (int64_t i = 0; i < elems; ++i) {
-            ((float16 *)data)[i] = (float16)(distribution(generator));
-        }
-        break;
-    default:
-        break;
+        case DataType::kFLOAT:
+            for (int64_t i = 0; i < elems; ++i) {
+                ((float *)data)[i] = distribution(generator);
+            }
+            break;
+        case DataType::kHALF:
+            for (int64_t i = 0; i < elems; ++i) {
+                ((float16 *)data)[i] = (float16)(distribution(generator));
+            }
+            break;
+        default:
+            break;
     }
 
     mTmpAllocs.push_back(data);
     return Weights{getDataType(), data, elems};
 }
 
-Weights CaffeWeightFactory::allocateWeights(
-    int64_t elems, std::normal_distribution<float> distribution) {
+Weights CaffeWeightFactory::allocateWeights(int64_t elems, std::normal_distribution<float> distribution) {
     void *data = malloc(elems * getDataTypeSize());
 
     switch (getDataType()) {
-    case DataType::kFLOAT:
-        for (int64_t i = 0; i < elems; ++i) {
-            ((float *)data)[i] = distribution(generator);
-        }
-        break;
-    case DataType::kHALF:
-        for (int64_t i = 0; i < elems; ++i) {
-            ((float16 *)data)[i] = (float16)(distribution(generator));
-        }
-        break;
-    default:
-        break;
+        case DataType::kFLOAT:
+            for (int64_t i = 0; i < elems; ++i) {
+                ((float *)data)[i] = distribution(generator);
+            }
+            break;
+        case DataType::kHALF:
+            for (int64_t i = 0; i < elems; ++i) {
+                ((float16 *)data)[i] = (float16)(distribution(generator));
+            }
+            break;
+        default:
+            break;
     }
 
     mTmpAllocs.push_back(data);
     return Weights{getDataType(), data, elems};
 }
 
-trtcaffe::Type
-CaffeWeightFactory::getBlobProtoDataType(const trtcaffe::BlobProto &blobMsg) {
+trtcaffe::Type CaffeWeightFactory::getBlobProtoDataType(const trtcaffe::BlobProto &blobMsg) {
     if (blobMsg.has_raw_data()) {
         assert(blobMsg.has_raw_data_type());
         return blobMsg.raw_data_type();
@@ -228,29 +222,23 @@ size_t CaffeWeightFactory::sizeOfCaffeType(trtcaffe::Type type) {
 }
 
 // The size returned here is the number of array entries, not bytes
-std::pair<const void *, size_t>
-CaffeWeightFactory::getBlobProtoData(const trtcaffe::BlobProto &blobMsg,
-                                     trtcaffe::Type type,
-                                     std::vector<void *> &tmpAllocs) {
+std::pair<const void *, size_t> CaffeWeightFactory::getBlobProtoData(const trtcaffe::BlobProto &blobMsg,
+                                                                     trtcaffe::Type type,
+                                                                     std::vector<void *> &tmpAllocs) {
     // NVCaffe new binary format. It may carry any type.
     if (blobMsg.has_raw_data()) {
         assert(blobMsg.has_raw_data_type());
         if (blobMsg.raw_data_type() == type)
-            return std::make_pair(&blobMsg.raw_data().front(),
-                                  blobMsg.raw_data().size() /
-                                      sizeOfCaffeType(type));
+            return std::make_pair(&blobMsg.raw_data().front(), blobMsg.raw_data().size() / sizeOfCaffeType(type));
     }
     // Old BVLC format.
     if (blobMsg.data_size() > 0 && type == trtcaffe::FLOAT)
         return std::make_pair(&blobMsg.data().Get(0), blobMsg.data_size());
 
     // Converting to the target type otherwise
-    const int count =
-        blobMsg.has_raw_data()
-            ? blobMsg.raw_data().size() /
-                  sizeOfCaffeType(blobMsg.raw_data_type())
-            : (blobMsg.data_size() > 0 ? blobMsg.data_size()
-                                       : blobMsg.double_data_size());
+    const int count = blobMsg.has_raw_data()
+                          ? blobMsg.raw_data().size() / sizeOfCaffeType(blobMsg.raw_data_type())
+                          : (blobMsg.data_size() > 0 ? blobMsg.data_size() : blobMsg.double_data_size());
 
     if (count > 0) {
         void *new_memory = malloc(count * sizeOfCaffeType(type));
@@ -260,14 +248,12 @@ CaffeWeightFactory::getBlobProtoData(const trtcaffe::BlobProto &blobMsg,
             auto *dst = reinterpret_cast<float *>(new_memory);
             if (blobMsg.has_raw_data()) {
                 if (blobMsg.raw_data_type() == trtcaffe::FLOAT16) {
-                    const auto *src = reinterpret_cast<const float16 *>(
-                        &blobMsg.raw_data().front());
+                    const auto *src = reinterpret_cast<const float16 *>(&blobMsg.raw_data().front());
                     for (int i = 0; i < count; ++i) {
                         dst[i] = float(src[i]);
                     }
                 } else if (blobMsg.raw_data_type() == trtcaffe::DOUBLE) {
-                    const auto *src = reinterpret_cast<const double *>(
-                        &blobMsg.raw_data().front());
+                    const auto *src = reinterpret_cast<const double *>(&blobMsg.raw_data().front());
                     for (int i = 0; i < count; ++i) {
                         dst[i] = float(src[i]);
                     }
@@ -284,14 +270,12 @@ CaffeWeightFactory::getBlobProtoData(const trtcaffe::BlobProto &blobMsg,
 
             if (blobMsg.has_raw_data()) {
                 if (blobMsg.raw_data_type() == trtcaffe::FLOAT) {
-                    const auto *src = reinterpret_cast<const float *>(
-                        &blobMsg.raw_data().front());
+                    const auto *src = reinterpret_cast<const float *>(&blobMsg.raw_data().front());
                     for (int i = 0; i < count; ++i) {
                         dst[i] = float16(src[i]);
                     }
                 } else if (blobMsg.raw_data_type() == trtcaffe::DOUBLE) {
-                    const auto *src = reinterpret_cast<const double *>(
-                        &blobMsg.raw_data().front());
+                    const auto *src = reinterpret_cast<const double *>(&blobMsg.raw_data().front());
                     for (int i = 0; i < count; ++i) {
                         dst[i] = float16(float(src[i]));
                     }
@@ -312,8 +296,7 @@ CaffeWeightFactory::getBlobProtoData(const trtcaffe::BlobProto &blobMsg,
 }
 
 template <typename T>
-bool CaffeWeightFactory::checkForNans(const void *values, int count,
-                                      const std::string &layerName) {
+bool CaffeWeightFactory::checkForNans(const void *values, int count, const std::string &layerName) {
     const T *v = reinterpret_cast<const T *>(values);
     for (int i = 0; i < count; i++) {
         if (std::isnan(float(v[i]))) {
@@ -324,22 +307,17 @@ bool CaffeWeightFactory::checkForNans(const void *values, int count,
     return true;
 }
 
-Weights CaffeWeightFactory::getWeights(const trtcaffe::BlobProto &blobMsg,
-                                       const std::string &layerName) {
+Weights CaffeWeightFactory::getWeights(const trtcaffe::BlobProto &blobMsg, const std::string &layerName) {
     // Always load weights into FLOAT format
-    const auto blobProtoData =
-        getBlobProtoData(blobMsg, trtcaffe::FLOAT, mTmpAllocs);
+    const auto blobProtoData = getBlobProtoData(blobMsg, trtcaffe::FLOAT, mTmpAllocs);
 
     if (blobProtoData.first == nullptr) {
         const int bits = mDataType == DataType::kFLOAT ? 32 : 16;
-        LOG_ERROR("{}: {}-bit weights not found for {}-bit model", layerName,
-                  bits, bits);
+        LOG_ERROR("{}: {}-bit weights not found for {}-bit model", layerName, bits, bits);
         mOK = false;
         return Weights{DataType::kFLOAT, nullptr, 0};
     }
 
-    mOK &= checkForNans<float>(blobProtoData.first, int(blobProtoData.second),
-                               layerName);
-    return Weights{DataType::kFLOAT, blobProtoData.first,
-                   int(blobProtoData.second)};
+    mOK &= checkForNans<float>(blobProtoData.first, int(blobProtoData.second), layerName);
+    return Weights{DataType::kFLOAT, blobProtoData.first, int(blobProtoData.second)};
 }

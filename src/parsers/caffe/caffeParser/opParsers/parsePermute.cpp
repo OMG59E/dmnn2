@@ -12,10 +12,8 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parsePermute(INetworkDefinition &network,
-                     const trtcaffe::LayerParameter &msg,
-                     CaffeWeightFactory & /*weightFactory*/,
-                     BlobNameToTensor &tensors) {
+ILayer *parsePermute(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                     CaffeWeightFactory & /*weightFactory*/, BlobNameToTensor &tensors) {
     if (!checkBlobs(msg, 1, 1))
         return nullptr;
 
@@ -26,13 +24,10 @@ ILayer *parsePermute(INetworkDefinition &network,
 
     std::vector<int> orders;
     std::vector<bool> knownOrders(nbDims + 1, false);
-    bool orderAbort =
-        (p.order(0) != 0); // First order must be 0 (batch dimension)
+    bool orderAbort = (p.order(0) != 0);  // First order must be 0 (batch dimension)
     for (int i = 0; i < p.order_size(); i++) {
         int order = p.order(i);
-        orderAbort |=
-            (order > nbDims) ||
-            (std::find(orders.begin(), orders.end(), order) != orders.end());
+        orderAbort |= (order > nbDims) || (std::find(orders.begin(), orders.end(), order) != orders.end());
         orders.push_back(order);
         knownOrders[order] = true;
     }
@@ -58,8 +53,7 @@ ILayer *parsePermute(INetworkDefinition &network,
         topDims.d[i] = bottomDims.d[orders[i] - 1];
 
     if (parserutils::volume(topDims) != parserutils::volume(bottomDims))
-        LOG_FATAL(
-            "top dimensions volume does not match bottom dimensions volume");
+        LOG_FATAL("top dimensions volume does not match bottom dimensions volume");
 
     nvinfer1::Permutation permuteOrder;
     for (int i = 0; i < nbDims; i++)
@@ -70,4 +64,4 @@ ILayer *parsePermute(INetworkDefinition &network,
     permute->setFirstTranspose(permuteOrder);
     return permute;
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

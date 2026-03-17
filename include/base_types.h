@@ -8,9 +8,10 @@
  * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
 #pragma once
+#include <random>
+
 #include "error_check.h"
 #include "logging.h"
-#include <random>
 
 #ifdef AARCH64
 // CUDA: use 512 threads per block
@@ -20,9 +21,7 @@
 #endif
 
 #define CUDA_GET_BLOCKS(N) (N + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS
-#define CUDA_KERNEL_LOOP(i, n)                                                 \
-    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < (n);               \
-         i += blockDim.x * gridDim.x)
+#define CUDA_KERNEL_LOOP(i, n) for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < (n); i += blockDim.x * gridDim.x)
 
 #define FLOAT_MAX 3.402823466e+38F /* max value */
 
@@ -36,10 +35,18 @@ struct DimsCHW {
         d[1] = h;
         d[2] = w;
     }
-    int c() const { return d[0]; }
-    int h() const { return d[1]; }
-    int w() const { return d[2]; }
-    int size() const { return d[0] * d[1] * d[2]; }
+    int c() const {
+        return d[0];
+    }
+    int h() const {
+        return d[1];
+    }
+    int w() const {
+        return d[2];
+    }
+    int size() const {
+        return d[0] * d[1] * d[2];
+    }
 };
 
 struct DimsNCHW {
@@ -52,11 +59,21 @@ struct DimsNCHW {
         d[2] = h;
         d[3] = w;
     }
-    int n() const { return d[0]; }
-    int c() const { return d[1]; }
-    int h() const { return d[2]; }
-    int w() const { return d[3]; }
-    int size() const { return d[0] * d[1] * d[2] * d[3]; }
+    int n() const {
+        return d[0];
+    }
+    int c() const {
+        return d[1];
+    }
+    int h() const {
+        return d[2];
+    }
+    int w() const {
+        return d[3];
+    }
+    int size() const {
+        return d[0] * d[1] * d[2] * d[3];
+    }
 };
 
 typedef enum ColorType {
@@ -102,24 +119,24 @@ typedef enum MemoryType { MEMORY_TYPE_CPU = 0, MEMORY_TYPE_GPU } memoryType_t;
 
 static uint8_t get_item_size(DataType dataType) {
     switch (dataType) {
-    case DATA_TYPE_BOOL:
-    case DATA_TYPE_INT8:
-    case DATA_TYPE_UINT8:
-        return 1;
-    case DATA_TYPE_FLOAT16:
-    case DATA_TYPE_INT16:
-    case DATA_TYPE_UINT16:
-        return 2;
-    case DATA_TYPE_FLOAT32:
-    case DATA_TYPE_INT32:
-    case DATA_TYPE_UINT32:
-        return 4;
-    case DATA_TYPE_INT64:
-    case DATA_TYPE_UINT64:
-    case DATA_TYPE_DOUBLE:
-        return 8;
-    default:
-        LOG_FATAL("Unknown data type: {}", static_cast<int>(dataType));
+        case DATA_TYPE_BOOL:
+        case DATA_TYPE_INT8:
+        case DATA_TYPE_UINT8:
+            return 1;
+        case DATA_TYPE_FLOAT16:
+        case DATA_TYPE_INT16:
+        case DATA_TYPE_UINT16:
+            return 2;
+        case DATA_TYPE_FLOAT32:
+        case DATA_TYPE_INT32:
+        case DATA_TYPE_UINT32:
+            return 4;
+        case DATA_TYPE_INT64:
+        case DATA_TYPE_UINT64:
+        case DATA_TYPE_DOUBLE:
+            return 8;
+        default:
+            LOG_FATAL("Unknown data type: {}", static_cast<int>(dataType));
     }
 }
 
@@ -134,59 +151,55 @@ typedef struct Image {
     int channels() const {
         if (colorType == COLOR_TYPE_GRAY) {
             return 1;
-        } else if (colorType == COLOR_TYPE_RGB888_PACKED ||
-                   colorType == COLOR_TYPE_BGR888_PACKED ||
-                   colorType == COLOR_TYPE_BGR888_PLANAR ||
-                   colorType == COLOR_TYPE_RGB888_PLANAR ||
-                   colorType == COLOR_TYPE_YUV420SP_NV12 ||
-                   colorType == COLOR_TYPE_YUV420SP_NV21 ||
-                   colorType == COLOR_TYPE_YUV420P_YV12 ||
-                   colorType == COLOR_TYPE_YUV420P_YU12 ||
-                   colorType == COLOR_TYPE_YUV422P ||
-                   colorType == COLOR_TYPE_YUV444P) {
+        } else if (colorType == COLOR_TYPE_RGB888_PACKED || colorType == COLOR_TYPE_BGR888_PACKED ||
+                   colorType == COLOR_TYPE_BGR888_PLANAR || colorType == COLOR_TYPE_RGB888_PLANAR ||
+                   colorType == COLOR_TYPE_YUV420SP_NV12 || colorType == COLOR_TYPE_YUV420SP_NV21 ||
+                   colorType == COLOR_TYPE_YUV420P_YV12 || colorType == COLOR_TYPE_YUV420P_YU12 ||
+                   colorType == COLOR_TYPE_YUV422P || colorType == COLOR_TYPE_YUV444P) {
             return 3;
-        } else if (colorType == COLOR_TYPE_RGBA8888_PACKED ||
-                   colorType == COLOR_TYPE_BGRA8888_PACKED) {
+        } else if (colorType == COLOR_TYPE_RGBA8888_PACKED || colorType == COLOR_TYPE_BGRA8888_PACKED) {
             return 4;
         } else {
             LOG_FATAL("unknown color type");
         }
     }
-    int h() const { return height; }
-    int w() const { return width; }
+    int h() const {
+        return height;
+    }
+    int w() const {
+        return width;
+    }
     int size() const {
         if (colorType == COLOR_TYPE_GRAY) {
             return width * height;
-        } else if (colorType == COLOR_TYPE_RGB888_PACKED ||
-                   colorType == COLOR_TYPE_BGR888_PACKED ||
-                   colorType == COLOR_TYPE_BGR888_PLANAR ||
-                   colorType == COLOR_TYPE_RGB888_PLANAR ||
+        } else if (colorType == COLOR_TYPE_RGB888_PACKED || colorType == COLOR_TYPE_BGR888_PACKED ||
+                   colorType == COLOR_TYPE_BGR888_PLANAR || colorType == COLOR_TYPE_RGB888_PLANAR ||
                    colorType == COLOR_TYPE_YUV444P) {
             return width * height * 3;
-        } else if (colorType == COLOR_TYPE_YUV420SP_NV12 ||
-                   colorType == COLOR_TYPE_YUV420SP_NV21 ||
-                   colorType == COLOR_TYPE_YUV420P_YV12 ||
-                   colorType == COLOR_TYPE_YUV420P_YU12) {
+        } else if (colorType == COLOR_TYPE_YUV420SP_NV12 || colorType == COLOR_TYPE_YUV420SP_NV21 ||
+                   colorType == COLOR_TYPE_YUV420P_YV12 || colorType == COLOR_TYPE_YUV420P_YU12) {
             return width * height * 3 / 2;
         } else if (colorType == COLOR_TYPE_YUV422P) {
             return width * height * 2;
-        } else if (colorType == COLOR_TYPE_RGBA8888_PACKED ||
-                   colorType == COLOR_TYPE_BGRA8888_PACKED) {
+        } else if (colorType == COLOR_TYPE_RGBA8888_PACKED || colorType == COLOR_TYPE_BGRA8888_PACKED) {
             return width * height * 4;
         } else {
             LOG_FATAL("unknown color type");
         }
     }
-    uint8_t item_size() const { return get_item_size(dataType); }
-    int size_bytes() const { return size() * item_size(); }
+    uint8_t item_size() const {
+        return get_item_size(dataType);
+    }
+    int size_bytes() const {
+        return size() * item_size();
+    }
     void free() {
         if (own) {
             CUDA_FREE(gpu_data);
             CUDA_HOST_FREE(data);
         }
     }
-    void create(int h, int w, bool gpu = true,
-                ColorType _colorType = COLOR_TYPE_BGR888_PACKED,
+    void create(int h, int w, bool gpu = true, ColorType _colorType = COLOR_TYPE_BGR888_PACKED,
                 DataType _dataType = DATA_TYPE_UINT8) {
         width = w;
         height = h;
@@ -218,8 +231,12 @@ struct Tensor {
             v *= dims[d];
         return v;
     }
-    uint8_t item_size() const { return get_item_size(dataType); }
-    size_t size_bytes() const { return size() * item_size(); }
+    uint8_t item_size() const {
+        return get_item_size(dataType);
+    }
+    size_t size_bytes() const {
+        return size() * item_size();
+    }
     void free() {
         if (own) {
             CUDA_FREE(gpu_data);
@@ -235,12 +252,11 @@ typedef struct Color {
     Color() {
         // 使用 random_device 来获得种子
         std::random_device rd;
-        std::mt19937 gen(rd());  // Mersenne Twister 引擎
-        std::uniform_int_distribution<> dis(
-            0, 255);   // 均匀分布，生成 0 到 255 之间的整数
-        r = dis(gen);  // 随机生成 r 值
-        g = dis(gen);  // 随机生成 g 值
-        b = dis(gen);  // 随机生成 b 值
+        std::mt19937 gen(rd());                       // Mersenne Twister 引擎
+        std::uniform_int_distribution<> dis(0, 255);  // 均匀分布，生成 0 到 255 之间的整数
+        r = dis(gen);                                 // 随机生成 r 值
+        g = dis(gen);                                 // 随机生成 g 值
+        b = dis(gen);                                 // 随机生成 b 值
     }
     Color(int _r, int _g, int _b) {
         r = _r;
@@ -269,11 +285,21 @@ typedef struct BoundingBox {
     int y1{0};
     int x2{0};
     int y2{0};
-    int w() const { return x2 - x1 + 1; }
-    int h() const { return y2 - y1 + 1; }
-    int area() const { return w() * h(); }
-    int cx() const { return (x1 + x2) / 2; }
-    int cy() const { return (y1 + y2) / 2; }
+    int w() const {
+        return x2 - x1 + 1;
+    }
+    int h() const {
+        return y2 - y1 + 1;
+    }
+    int area() const {
+        return w() * h();
+    }
+    int cx() const {
+        return (x1 + x2) / 2;
+    }
+    int cy() const {
+        return (y1 + y2) / 2;
+    }
     BoundingBox() = default;
     BoundingBox(int x1, int x2, int y1, int y2) {
         this->x1 = x1;
@@ -316,8 +342,7 @@ typedef struct Object {
 typedef struct Frame : Image {
     uint64_t channel_id{0};  // 通道号
     uint64_t idx{0};         // 帧号
-    uint64_t timestamp{
-        0};  // 流：被解码时刻的时间戳，文件：依据帧率换算的时间戳, 微秒
+    uint64_t timestamp{0};   // 流：被解码时刻的时间戳，文件：依据帧率换算的时间戳, 微秒
     std::vector<object_t> objects;  // 当前帧目标信息
 } frame_t;
 }  // namespace nv

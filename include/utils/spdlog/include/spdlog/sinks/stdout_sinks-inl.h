@@ -4,25 +4,26 @@
 #pragma once
 
 #ifndef SPDLOG_HEADER_ONLY
-    #include <spdlog/sinks/stdout_sinks.h>
+#include <spdlog/sinks/stdout_sinks.h>
 #endif
 
-#include <memory>
 #include <spdlog/details/console_globals.h>
 #include <spdlog/pattern_formatter.h>
 
+#include <memory>
+
 #ifdef _WIN32
-    // under windows using fwrite to non-binary stream results in \r\r\n (see issue #1675)
-    // so instead we use ::FileWrite
-    #include <spdlog/details/windows_include.h>
+// under windows using fwrite to non-binary stream results in \r\r\n (see issue #1675)
+// so instead we use ::FileWrite
+#include <spdlog/details/windows_include.h>
 
-    #ifndef _USING_V110_SDK71_  // fileapi.h doesn't exist in winxp
-        #include <fileapi.h>    // WriteFile (..)
-    #endif
+#ifndef _USING_V110_SDK71_  // fileapi.h doesn't exist in winxp
+#include <fileapi.h>        // WriteFile (..)
+#endif
 
-    #include <io.h>     // _get_osfhandle(..)
-    #include <stdio.h>  // _fileno(..)
-#endif                  // WIN32
+#include <io.h>     // _get_osfhandle(..)
+#include <stdio.h>  // _fileno(..)
+#endif              // WIN32
 
 namespace spdlog {
 
@@ -30,9 +31,7 @@ namespace sinks {
 
 template <typename ConsoleMutex>
 SPDLOG_INLINE stdout_sink_base<ConsoleMutex>::stdout_sink_base(FILE *file)
-    : mutex_(ConsoleMutex::mutex()),
-      file_(file),
-      formatter_(details::make_unique<spdlog::pattern_formatter>()) {
+    : mutex_(ConsoleMutex::mutex()), file_(file), formatter_(details::make_unique<spdlog::pattern_formatter>()) {
 #ifdef _WIN32
     // get windows handle from the FILE* object
 
@@ -60,8 +59,7 @@ SPDLOG_INLINE void stdout_sink_base<ConsoleMutex>::log(const details::log_msg &m
     DWORD bytes_written = 0;
     bool ok = ::WriteFile(handle_, formatted.data(), size, &bytes_written, nullptr) != 0;
     if (!ok) {
-        throw_spdlog_ex("stdout_sink_base: WriteFile() failed. GetLastError(): " +
-                        std::to_string(::GetLastError()));
+        throw_spdlog_ex("stdout_sink_base: WriteFile() failed. GetLastError(): " + std::to_string(::GetLastError()));
     }
 #else
     std::lock_guard<mutex_t> lock(mutex_);
@@ -85,21 +83,18 @@ SPDLOG_INLINE void stdout_sink_base<ConsoleMutex>::set_pattern(const std::string
 }
 
 template <typename ConsoleMutex>
-SPDLOG_INLINE void stdout_sink_base<ConsoleMutex>::set_formatter(
-    std::unique_ptr<spdlog::formatter> sink_formatter) {
+SPDLOG_INLINE void stdout_sink_base<ConsoleMutex>::set_formatter(std::unique_ptr<spdlog::formatter> sink_formatter) {
     std::lock_guard<mutex_t> lock(mutex_);
     formatter_ = std::move(sink_formatter);
 }
 
 // stdout sink
 template <typename ConsoleMutex>
-SPDLOG_INLINE stdout_sink<ConsoleMutex>::stdout_sink()
-    : stdout_sink_base<ConsoleMutex>(stdout) {}
+SPDLOG_INLINE stdout_sink<ConsoleMutex>::stdout_sink() : stdout_sink_base<ConsoleMutex>(stdout) {}
 
 // stderr sink
 template <typename ConsoleMutex>
-SPDLOG_INLINE stderr_sink<ConsoleMutex>::stderr_sink()
-    : stdout_sink_base<ConsoleMutex>(stderr) {}
+SPDLOG_INLINE stderr_sink<ConsoleMutex>::stderr_sink() : stdout_sink_base<ConsoleMutex>(stderr) {}
 
 }  // namespace sinks
 

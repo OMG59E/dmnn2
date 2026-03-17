@@ -10,11 +10,12 @@
 #ifndef TRT_CAFFE_PARSER_READ_PROTO_H
 #define TRT_CAFFE_PARSER_READ_PROTO_H
 
+#include <fstream>
+
 #include "google/protobuf/io/coded_stream.h"
 #include "google/protobuf/io/zero_copy_stream_impl.h"
 #include "google/protobuf/text_format.h"
 #include "trtcaffe.pb.h"
-#include <fstream>
 
 namespace nvcaffeparser1 {
 // There are some challenges associated with importing caffe models. One is that
@@ -22,8 +23,7 @@ namespace nvcaffeparser1 {
 // input and output blobs.
 //
 // So we need to read the deploy file to get the input
-bool readBinaryProto(trtcaffe::NetParameter *net, const char *file,
-                     size_t bufSize) {
+bool readBinaryProto(trtcaffe::NetParameter *net, const char *file, size_t bufSize) {
     if (!net) {
         LOG_ERROR("input net is null");
         return false;
@@ -76,6 +76,6 @@ bool readTextProto(trtcaffe::NetParameter *net, const char *file) {
     stream.close();
     return ok;
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1
 
-#endif // TRT_CAFFE_PARSER_READ_PROTO_H
+#endif  // TRT_CAFFE_PARSER_READ_PROTO_H

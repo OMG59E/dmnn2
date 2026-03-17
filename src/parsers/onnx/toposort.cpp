@@ -8,16 +8,15 @@
  * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
 #include "toposort.hpp"
+
 #include "logging.h"
 #include "onnx-ml.pb.h"
 
 namespace {
 
 template <class Container>
-bool get_post_order(size_t node_idx, Container const &nodes,
-                    std::unordered_map<std::string, size_t> const &node_map,
-                    std::vector<NodeState> *node_states,
-                    std::vector<size_t> *order) {
+bool get_post_order(size_t node_idx, Container const &nodes, std::unordered_map<std::string, size_t> const &node_map,
+                    std::vector<NodeState> *node_states, std::vector<size_t> *order) {
     NodeState &node_state = node_states->at(node_idx);
     if (node_state == NODE_ACTIVE) {
         // Cycle detected!
@@ -35,8 +34,7 @@ bool get_post_order(size_t node_idx, Container const &nodes,
                 continue;  // Skip missing input edges
             }
             size_t input_node_idx = node_map.at(input);
-            if (!get_post_order(input_node_idx, nodes, node_map, node_states,
-                                order)) {
+            if (!get_post_order(input_node_idx, nodes, node_map, node_states, order)) {
                 return false;
             }
         }
@@ -74,5 +72,4 @@ bool toposort(Container const &nodes, std::vector<size_t> *order) {
 
 // Explicit template instantiation if needed
 template bool toposort<google::protobuf::RepeatedPtrField<onnx::NodeProto>>(
-    google::protobuf::RepeatedPtrField<onnx::NodeProto> const &nodes,
-    std::vector<size_t> *order);
+    google::protobuf::RepeatedPtrField<onnx::NodeProto> const &nodes, std::vector<size_t> *order);

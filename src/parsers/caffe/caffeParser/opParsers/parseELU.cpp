@@ -12,21 +12,18 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parseELU(INetworkDefinition &network,
-                 const trtcaffe::LayerParameter &msg,
-                 CaffeWeightFactory & /* weightFactory */,
-                 BlobNameToTensor &tensors) {
+ILayer *parseELU(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                 CaffeWeightFactory & /* weightFactory */, BlobNameToTensor &tensors) {
     if (!checkBlobs(msg, 1, 1))
         return nullptr;
 
     const trtcaffe::ELUParameter &p = msg.elu_param();
 
-    float alpha = 1.f; // default parameter
+    float alpha = 1.f;  // default parameter
     if (p.has_alpha())
         alpha = p.alpha();
-    auto newLayer =
-        network.addActivation(*tensors[msg.bottom(0)], ActivationType::kELU);
+    auto newLayer = network.addActivation(*tensors[msg.bottom(0)], ActivationType::kELU);
     newLayer->setAlpha(alpha);
     return newLayer;
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

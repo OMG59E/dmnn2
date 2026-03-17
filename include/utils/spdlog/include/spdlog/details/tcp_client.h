@@ -4,17 +4,16 @@
 #pragma once
 
 #ifdef _WIN32
-    #error include tcp_client-windows.h instead
+#error include tcp_client-windows.h instead
 #endif
 
 // tcp client helper
-#include <spdlog/common.h>
-#include <spdlog/details/os.h>
-
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <spdlog/common.h>
+#include <spdlog/details/os.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -26,7 +25,9 @@ class tcp_client {
     int socket_ = -1;
 
 public:
-    bool is_connected() const { return socket_ != -1; }
+    bool is_connected() const {
+        return socket_ != -1;
+    }
 
     void close() {
         if (is_connected()) {
@@ -35,9 +36,13 @@ public:
         }
     }
 
-    int fd() const { return socket_; }
+    int fd() const {
+        return socket_;
+    }
 
-    ~tcp_client() { close(); }
+    ~tcp_client() {
+        close();
+    }
 
     // try to connect or throw on failure
     void connect(const std::string &host, int port) {
@@ -84,17 +89,15 @@ public:
 
         // set TCP_NODELAY
         int enable_flag = 1;
-        ::setsockopt(socket_, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char *>(&enable_flag),
-                     sizeof(enable_flag));
+        ::setsockopt(socket_, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char *>(&enable_flag), sizeof(enable_flag));
 
         // prevent sigpipe on systems where MSG_NOSIGNAL is not available
 #if defined(SO_NOSIGPIPE) && !defined(MSG_NOSIGNAL)
-        ::setsockopt(socket_, SOL_SOCKET, SO_NOSIGPIPE, reinterpret_cast<char *>(&enable_flag),
-                     sizeof(enable_flag));
+        ::setsockopt(socket_, SOL_SOCKET, SO_NOSIGPIPE, reinterpret_cast<char *>(&enable_flag), sizeof(enable_flag));
 #endif
 
 #if !defined(SO_NOSIGPIPE) && !defined(MSG_NOSIGNAL)
-    #error "tcp_sink would raise SIGPIPE since neither SO_NOSIGPIPE nor MSG_NOSIGNAL are available"
+#error "tcp_sink would raise SIGPIPE since neither SO_NOSIGPIPE nor MSG_NOSIGNAL are available"
 #endif
     }
 
@@ -108,8 +111,7 @@ public:
 #else
             const int send_flags = 0;
 #endif
-            auto write_result =
-                ::send(socket_, data + bytes_sent, n_bytes - bytes_sent, send_flags);
+            auto write_result = ::send(socket_, data + bytes_sent, n_bytes - bytes_sent, send_flags);
             if (write_result < 0) {
                 close();
                 throw_spdlog_ex("write(2) failed", errno);

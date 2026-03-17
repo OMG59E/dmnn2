@@ -3,13 +3,13 @@
 
 #pragma once
 
+#include <spdlog/common.h>
+
 #include <map>
 #include <string>
 
-#include <spdlog/common.h>
-
-// MDC is a simple map of key->string values stored in thread local storage whose content will be printed by the loggers.
-// Note: Not supported in async mode (thread local storage - so the async thread pool have different copy).
+// MDC is a simple map of key->string values stored in thread local storage whose content will be printed by the
+// loggers. Note: Not supported in async mode (thread local storage - so the async thread pool have different copy).
 //
 // Usage example:
 // spdlog::mdc::put("mdc_key_1", "mdc_value_1");
@@ -33,9 +33,13 @@ public:
         return "";
     }
 
-    static void remove(const std::string &key) { get_context().erase(key); }
+    static void remove(const std::string &key) {
+        get_context().erase(key);
+    }
 
-    static void clear() { get_context().clear(); }
+    static void clear() {
+        get_context().clear();
+    }
 
     static mdc_map_t &get_context() {
         static thread_local mdc_map_t context;

@@ -12,9 +12,7 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parsePReLU(INetworkDefinition &network,
-                   const trtcaffe::LayerParameter &msg,
-                   CaffeWeightFactory &weightFactory,
+ILayer *parsePReLU(INetworkDefinition &network, const trtcaffe::LayerParameter &msg, CaffeWeightFactory &weightFactory,
                    BlobNameToTensor &tensors) {
     // Caffe stores the slopes as weights rather than as a tensor, and only
     // supports different slopes per channel
@@ -28,21 +26,15 @@ ILayer *parsePReLU(INetworkDefinition &network,
     if (inputDims.nbDims < 2)
         return nullptr;
 
-    int nWeights =
-        channelShared
-            ? 1
-            : inputDims.d[0]; // Caffe treats second input dimension as channels
+    int nWeights = channelShared ? 1 : inputDims.d[0];  // Caffe treats second input dimension as channels
     Dims slopesDims{inputDims.nbDims, {}};
     std::fill(slopesDims.d, slopesDims.d + slopesDims.nbDims, 1);
     slopesDims.d[0] = nWeights;
 
-    Weights w =
-        weightFactory.isInitialized()
-            ? weightFactory(msg.name(), WeightType::kGENERIC)
-            : weightFactory.allocateWeights(
-                  nWeights, std::uniform_real_distribution<float>(0.F, 1.F));
+    Weights w = weightFactory.isInitialized()
+                    ? weightFactory(msg.name(), WeightType::kGENERIC)
+                    : weightFactory.allocateWeights(nWeights, std::uniform_real_distribution<float>(0.F, 1.F));
     auto constLayer = network.addConstant(slopesDims, w);
-    return network.addParametricReLU(*tensors[msg.bottom(0)],
-                                     *constLayer->getOutput(0));
+    return network.addParametricReLU(*tensors[msg.bottom(0)], *constLayer->getOutput(0));
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

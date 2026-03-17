@@ -4,7 +4,7 @@
 #pragma once
 
 #ifndef SPDLOG_HEADER_ONLY
-    #include <spdlog/details/file_helper.h>
+#include <spdlog/details/file_helper.h>
 #endif
 
 #include <spdlog/common.h>
@@ -20,10 +20,11 @@
 namespace spdlog {
 namespace details {
 
-SPDLOG_INLINE file_helper::file_helper(const file_event_handlers &event_handlers)
-    : event_handlers_(event_handlers) {}
+SPDLOG_INLINE file_helper::file_helper(const file_event_handlers &event_handlers) : event_handlers_(event_handlers) {}
 
-SPDLOG_INLINE file_helper::~file_helper() { close(); }
+SPDLOG_INLINE file_helper::~file_helper() {
+    close();
+}
 
 SPDLOG_INLINE void file_helper::open(const filename_t &fname, bool truncate) {
     close();
@@ -59,8 +60,7 @@ SPDLOG_INLINE void file_helper::open(const filename_t &fname, bool truncate) {
         details::os::sleep_for_millis(open_interval_);
     }
 
-    throw_spdlog_ex("Failed opening file " + os::filename_to_str(filename_) + " for writing",
-                    errno);
+    throw_spdlog_ex("Failed opening file " + os::filename_to_str(filename_) + " for writing", errno);
 }
 
 SPDLOG_INLINE void file_helper::reopen(bool truncate) {
@@ -98,7 +98,8 @@ SPDLOG_INLINE void file_helper::close() {
 }
 
 SPDLOG_INLINE void file_helper::write(const memory_buf_t &buf) {
-    if (fd_ == nullptr) return;
+    if (fd_ == nullptr)
+        return;
     size_t msg_size = buf.size();
     auto data = buf.data();
     if (std::fwrite(data, 1, msg_size, fd_) != msg_size) {
@@ -113,7 +114,9 @@ SPDLOG_INLINE size_t file_helper::size() const {
     return os::filesize(fd_);
 }
 
-SPDLOG_INLINE const filename_t &file_helper::filename() const { return filename_; }
+SPDLOG_INLINE const filename_t &file_helper::filename() const {
+    return filename_;
+}
 
 //
 // return file path and its extension:
@@ -128,8 +131,7 @@ SPDLOG_INLINE const filename_t &file_helper::filename() const { return filename_
 // ".mylog" => (".mylog". "")
 // "my_folder/.mylog" => ("my_folder/.mylog", "")
 // "my_folder/.mylog.txt" => ("my_folder/.mylog", ".txt")
-SPDLOG_INLINE std::tuple<filename_t, filename_t> file_helper::split_by_extension(
-    const filename_t &fname) {
+SPDLOG_INLINE std::tuple<filename_t, filename_t> file_helper::split_by_extension(const filename_t &fname) {
     auto ext_index = fname.rfind('.');
 
     // no valid extension found - return whole path and empty string as

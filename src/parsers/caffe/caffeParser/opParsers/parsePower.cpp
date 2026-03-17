@@ -12,9 +12,7 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parsePower(INetworkDefinition &network,
-                   const trtcaffe::LayerParameter &msg,
-                   CaffeWeightFactory &weightFactory,
+ILayer *parsePower(INetworkDefinition &network, const trtcaffe::LayerParameter &msg, CaffeWeightFactory &weightFactory,
                    BlobNameToTensor &tensors) {
     if (!checkBlobs(msg, 1, 1))
         return nullptr;
@@ -48,7 +46,6 @@ ILayer *parsePower(INetworkDefinition &network,
     weightFactory.convert(wShift);
     weightFactory.convert(wScale);
     weightFactory.convert(wPower);
-    return network.addScale(*tensors[msg.bottom(0)], ScaleMode::kUNIFORM,
-                            wShift, wScale, wPower);
+    return network.addScale(*tensors[msg.bottom(0)], ScaleMode::kUNIFORM, wShift, wScale, wPower);
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

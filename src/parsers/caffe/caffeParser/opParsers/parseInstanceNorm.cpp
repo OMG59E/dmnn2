@@ -13,10 +13,8 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parseInstanceNorm(INetworkDefinition &network,
-                          const trtcaffe::LayerParameter &msg,
-                          CaffeWeightFactory &weightFactory,
-                          BlobNameToTensor &tensors) {
+ILayer *parseInstanceNorm(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                          CaffeWeightFactory &weightFactory, BlobNameToTensor &tensors) {
     if (!checkBlobs(msg, 1, 1))
         return nullptr;
 
@@ -31,14 +29,12 @@ ILayer *parseInstanceNorm(INetworkDefinition &network,
     weightFactory.convert(bias);
 
     // C,H,W -> C,1,1   m = mean(x)
-    auto *layer_reduce1 = network.addReduce(*tensors[msg.bottom(0)],
-                                            ReduceOperation::kAVG, 6, true);
+    auto *layer_reduce1 = network.addReduce(*tensors[msg.bottom(0)], ReduceOperation::kAVG, 6, true);
     if (!layer_reduce1)
         LOG_FATAL("Failed to create reduce layer");
     // C,H,W  C,1,1 -> C,H,W   (x - m)
-    auto layer_elwise1 = network.addElementWise(*tensors[msg.bottom(0)],
-                                                *layer_reduce1->getOutput(0),
-                                                ElementWiseOperation::kSUB);
+    auto layer_elwise1 =
+        network.addElementWise(*tensors[msg.bottom(0)], *layer_reduce1->getOutput(0), ElementWiseOperation::kSUB);
     if (!layer_elwise1)
         LOG_FATAL("Failed to create elwise layer");
 
@@ -59,15 +55,12 @@ ILayer *parseInstanceNorm(INetworkDefinition &network,
     weightFactory.getTmpAllocs().push_back(power11);
 
     // C,H,W -> C,H,W   (x - m)^2
-    auto *layer_scale1 =
-        network.addScale(*layer_elwise1->getOutput(0), ScaleMode::kUNIFORM,
-                         shift1, scale1, power1);
+    auto *layer_scale1 = network.addScale(*layer_elwise1->getOutput(0), ScaleMode::kUNIFORM, shift1, scale1, power1);
     if (!layer_scale1)
         LOG_FATAL("Failed to create scale layer");
 
     // C,H,W -> C,1,1  s = mean((x - m)^2)
-    auto *layer_reduce2 = network.addReduce(*layer_scale1->getOutput(0),
-                                            ReduceOperation::kAVG, 6, true);
+    auto *layer_reduce2 = network.addReduce(*layer_scale1->getOutput(0), ReduceOperation::kAVG, 6, true);
     if (!layer_reduce2)
         LOG_FATAL("Failed to create reduce layer");
 
@@ -87,32 +80,27 @@ ILayer *parseInstanceNorm(INetworkDefinition &network,
     weightFactory.getTmpAllocs().push_back(scale21);
     weightFactory.getTmpAllocs().push_back(power21);
     // C,1,1 -> C,1,1   (s + eps)^0.5
-    auto *layer_scale2 =
-        network.addScale(*layer_reduce2->getOutput(0), ScaleMode::kUNIFORM,
-                         shift2, scale2, power2);
+    auto *layer_scale2 = network.addScale(*layer_reduce2->getOutput(0), ScaleMode::kUNIFORM, shift2, scale2, power2);
     if (!layer_scale2)
         LOG_FATAL("Failed to create scale layer");
 
     // C,H,W  C,1,1 -> C,H,W   (x - m) / (s + eps)^0.5)
-    auto *layer_elwise2 = network.addElementWise(*layer_elwise1->getOutput(0),
-                                                 *layer_scale2->getOutput(0),
-                                                 ElementWiseOperation::kDIV);
+    auto *layer_elwise2 =
+        network.addElementWise(*layer_elwise1->getOutput(0), *layer_scale2->getOutput(0), ElementWiseOperation::kDIV);
     if (!layer_elwise2)
         LOG_FATAL("Failed to create elwise layer");
 
-    auto *val3 =
-        reinterpret_cast<float *>(malloc(sizeof(float) * scales.count));
+    auto *val3 = reinterpret_cast<float *>(malloc(sizeof(float) * scales.count));
     std::fill_n(val3, scales.count, 1.0f);
     Weights power3{DataType::kFLOAT, val3, scales.count};
     weightFactory.convert(power3);
     weightFactory.getTmpAllocs().push_back(val3);
 
     // C,H,W -> C,H,W    (x*scale + bias)^pow
-    auto *scale3 = network.addScale(*layer_elwise2->getOutput(0),
-                                    ScaleMode::kCHANNEL, bias, scales, power3);
+    auto *scale3 = network.addScale(*layer_elwise2->getOutput(0), ScaleMode::kCHANNEL, bias, scales, power3);
     if (!scale3)
         LOG_FATAL("Failed to create scale layer");
 
     return scale3;
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

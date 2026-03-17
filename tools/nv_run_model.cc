@@ -7,11 +7,12 @@
  *
  * Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
+#include <algorithm>
+#include <chrono>
+
 #include "argparse/argparse.hpp"
 #include "logging.h"
 #include "models/net_operator.h"
-#include <algorithm>
-#include <chrono>
 
 using namespace std::chrono;
 
@@ -33,26 +34,11 @@ int main(int argc, char **argv) {
     InitGoogleLogging();
     argparse::ArgumentParser parser(argv[0], std::string("1.0"));
     parser.add_argument("-m", "--model").help("Trt model file").required();
-    parser.add_argument("-b", "--batch")
-        .help("Set batch size")
-        .default_value(1)
-        .scan<'i', int>();
-    parser.add_argument("-w", "--warmup")
-        .help("Set warmup")
-        .default_value(5)
-        .scan<'i', int>();
-    parser.add_argument("-r", "--repeat")
-        .help("Set repeat inference")
-        .default_value(100)
-        .scan<'i', int>();
-    parser.add_argument("-d", "--device")
-        .help("Run in which device")
-        .default_value(0)
-        .scan<'i', int>();
-    parser.add_argument("-l", "--layers")
-        .help("Print layer time")
-        .default_value(false)
-        .implicit_value(true);
+    parser.add_argument("-b", "--batch").help("Set batch size").default_value(1).scan<'i', int>();
+    parser.add_argument("-w", "--warmup").help("Set warmup").default_value(5).scan<'i', int>();
+    parser.add_argument("-r", "--repeat").help("Set repeat inference").default_value(100).scan<'i', int>();
+    parser.add_argument("-d", "--device").help("Run in which device").default_value(0).scan<'i', int>();
+    parser.add_argument("-l", "--layers").help("Print layer time").default_value(false).implicit_value(true);
 
     try {
         parser.parse_args(argc, argv);
@@ -99,10 +85,10 @@ int main(int argc, char **argv) {
     }
     float ave = total_latency / repeat;
     LOG_INFO("Batch: {}  repeat: {}  warmup: {}", batch_size, repeat, warmup);
-    LOG_INFO("Latency min: {:.3f}ms  max: {:.3f}ms  ave: {:.3f}ms  tp99: "
-             "{:.3f}ms  tp99.9: {:.3f}ms",
-             min_latency, max_latency, ave, calculateTP99(latencys),
-             calculateTP999(latencys));
+    LOG_INFO(
+        "Latency min: {:.3f}ms  max: {:.3f}ms  ave: {:.3f}ms  tp99: "
+        "{:.3f}ms  tp99.9: {:.3f}ms",
+        min_latency, max_latency, ave, calculateTP99(latencys), calculateTP999(latencys));
 
     if (enable_layers == true)
         net.printLayerTimes(repeat);

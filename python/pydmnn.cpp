@@ -7,12 +7,13 @@
  * @
  * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
-#include "models/net_operator.h"
-#include "pybind11/numpy.h"
-#include "pybind11/stl.h"
 #include <algorithm>
 #include <memory>
 #include <string>
+
+#include "models/net_operator.h"
+#include "pybind11/numpy.h"
+#include "pybind11/stl.h"
 
 namespace py = pybind11;
 

@@ -1,13 +1,9 @@
 # ==============================================================================
 # dmnn2 Clang-Format Configuration
 # ==============================================================================
-# Based on Google C++ Style Guide with project-specific modifications
+# Compatible with clang-format 10+
 
 BasedOnStyle: Google
-
-# ------------------------------------------------------------------------------
-# Language and Standard
-# ------------------------------------------------------------------------------
 Language: Cpp
 Standard: c++17
 
@@ -18,65 +14,33 @@ IndentWidth: 4
 TabWidth: 4
 UseTab: Never
 IndentCaseLabels: true
-IndentCaseBlocks: false
-IndentPPDirectives: None
-IndentExternBlock: AfterExternBlock
-IndentWrappedFunctionNames: false
 NamespaceIndentation: None
 
 # ------------------------------------------------------------------------------
 # Alignment
 # ------------------------------------------------------------------------------
 AlignAfterOpenBracket: Align
-AlignArrayOfStructures: None
-AlignConsecutiveAssignments: None
-AlignConsecutiveBitFields: None
-AlignConsecutiveDeclarations: None
-AlignConsecutiveMacros: None
 AlignEscapedNewlines: Left
-AlignOperands: Align
+AlignOperands: true
 AlignTrailingComments: true
 
 # ------------------------------------------------------------------------------
 # Braces
 # ------------------------------------------------------------------------------
 BreakBeforeBraces: Attach
-BraceWrapping:
-  AfterCaseLabel: false
-  AfterClass: false
-  AfterControlStatement: Never
-  AfterEnum: false
-  AfterFunction: false
-  AfterNamespace: false
-  AfterStruct: false
-  AfterUnion: false
-  AfterExternBlock: false
-  BeforeCatch: false
-  BeforeElse: false
-  BeforeLambdaBody: false
-  BeforeWhile: false
-  IndentBraces: false
-  SplitEmptyFunction: true
-  SplitEmptyRecord: true
-  SplitEmptyNamespace: true
 
 # ------------------------------------------------------------------------------
 # Line Breaking
 # ------------------------------------------------------------------------------
 ColumnLimit: 120
-AllowAllParametersOnNextLine: true
-AllowShortBlocksOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
-AllowShortEnumsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: Never
-AllowShortLambdasOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
-AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: true
-AlwaysBreakTemplateDeclarations: Yes
-BreakBeforeBinaryOperators: None
-BreakBeforeConceptDeclarations: true
+AlwaysBreakTemplateDeclarations: true
+BreakBeforeBinaryOperators: false
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: BeforeColon
 BreakInheritanceList: BeforeColon
@@ -86,53 +50,19 @@ BreakStringLiterals: true
 # Spacing
 # ------------------------------------------------------------------------------
 SpaceAfterCStyleCast: false
-SpaceAfterLogicalNot: false
 SpaceAfterTemplateKeyword: true
-SpaceAroundPointerQualifiers: Default
 SpaceBeforeAssignmentOperators: true
-SpaceBeforeCaseColon: false
 SpaceBeforeCpp11BracedList: false
 SpaceBeforeCtorInitializerColon: true
 SpaceBeforeInheritanceColon: true
 SpaceBeforeParens: ControlStatements
 SpaceBeforeRangeBasedForLoopColon: true
-SpaceBeforeSquareBrackets: false
-SpaceInEmptyBlock: false
 SpaceInEmptyParentheses: false
 SpacesBeforeTrailingComments: 2
-SpacesInAngles: Never
+SpacesInAngles: false
 SpacesInCStyleCastParentheses: false
-SpacesInConditionalStatement: false
-SpacesInContainerLiterals: true
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
-
-# ------------------------------------------------------------------------------
-# Includes
-# ------------------------------------------------------------------------------
-IncludeBlocks: Preserve
-SortIncludes: CaseSensitive
-IncludeCategories:
-  # System headers
-  - Regex: '<[a-z_]+>'
-    Priority: 1
-  # C++ standard library
-  - Regex: '<[a-z_/]+>'
-    Priority: 2
-  # CUDA headers
-  - Regex: '<cuda.*\.h>'
-    Priority: 3
-  - Regex: '<cudnn\.h>'
-    Priority: 3
-  - Regex: '<cublas.*\.h>'
-    Priority: 3
-  - Regex: '<NvInfer.*\.h>'
-    Priority: 3
-  - Regex: '<nvjpeg\.h>'
-    Priority: 3
-  # Project headers
-  - Regex: '".*"'
-    Priority: 4
 
 # ------------------------------------------------------------------------------
 # Other Options
@@ -142,20 +72,11 @@ BinPackArguments: true
 BinPackParameters: true
 CompactNamespaces: false
 Cpp11BracedListStyle: true
-DeriveLineEnding: true
 DerivePointerAlignment: true
-EmptyLineAfterAccessModifier: Never
-EmptyLineBeforeAccessModifier: LogicalBlock
 FixNamespaceComments: true
-InsertBraces: false
-InsertTrailingCommas: None
 KeepEmptyLinesAtTheStartOfBlocks: false
 MaxEmptyLinesToKeep: 1
-PackConstructorInitializers: NextLine
 PointerAlignment: Right
-QualifierAlignment: Leave
 ReflowComments: true
-SeparateDefinitionBlocks: Leave
-ShortNamespaceLines: 1
+SortIncludes: true
 SortUsingDeclarations: true
-UseCRLF: false

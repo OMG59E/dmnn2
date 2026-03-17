@@ -2,15 +2,16 @@
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 #pragma once
 
-#include <chrono>
-#include <iterator>
 #include <spdlog/common.h>
 #include <spdlog/fmt/fmt.h>
+
+#include <chrono>
+#include <iterator>
 #include <type_traits>
 
 #ifdef SPDLOG_USE_STD_FORMAT
-    #include <charconv>
-    #include <limits>
+#include <charconv>
+#include <limits>
 #endif
 
 // Some fmt helpers to efficiently format and pad ints and strings
@@ -53,10 +54,14 @@ SPDLOG_CONSTEXPR_FUNC unsigned int count_digits_fallback(T n) {
         // Integer division is slow so do it for a group of four digits instead
         // of for every digit. The idea comes from the talk by Alexandrescu
         // "Three Optimization Tips for C++". See speed-test for a comparison.
-        if (n < 10) return count;
-        if (n < 100) return count + 1;
-        if (n < 1000) return count + 2;
-        if (n < 10000) return count + 3;
+        if (n < 10)
+            return count;
+        if (n < 100)
+            return count + 1;
+        if (n < 1000)
+            return count + 2;
+        if (n < 10000)
+            return count + 3;
         n /= 10000u;
         count += 4;
     }
@@ -64,19 +69,18 @@ SPDLOG_CONSTEXPR_FUNC unsigned int count_digits_fallback(T n) {
 
 template <typename T>
 inline unsigned int count_digits(T n) {
-    using count_type =
-        typename std::conditional<(sizeof(T) > sizeof(uint32_t)), uint64_t, uint32_t>::type;
+    using count_type = typename std::conditional<(sizeof(T) > sizeof(uint32_t)), uint64_t, uint32_t>::type;
 #ifdef SPDLOG_USE_STD_FORMAT
     return count_digits_fallback(static_cast<count_type>(n));
 #else
     return static_cast<unsigned int>(fmt::
-    // fmt 7.0.0 renamed the internal namespace to detail.
-    // See: https://github.com/fmtlib/fmt/issues/1538
-    #if FMT_VERSION < 70000
+// fmt 7.0.0 renamed the internal namespace to detail.
+// See: https://github.com/fmtlib/fmt/issues/1538
+#if FMT_VERSION < 70000
                                          internal
-    #else
+#else
                                          detail
-    #endif
+#endif
                                      ::count_digits(static_cast<count_type>(n)));
 #endif
 }

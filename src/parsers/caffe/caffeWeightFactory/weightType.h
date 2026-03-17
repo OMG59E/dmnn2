@@ -13,9 +13,9 @@
 namespace nvcaffeparser1 {
 enum class WeightType {
     // types for convolution, deconv, fully connected
-    kGENERIC = 0, // typical weights for the layer: e.g. filter (for conv) or
-                  // matrix weights (for innerproduct)
-    kBIAS = 1,    // bias weights
+    kGENERIC = 0,  // typical weights for the layer: e.g. filter (for conv) or
+                   // matrix weights (for innerproduct)
+    kBIAS = 1,     // bias weights
 
     // These enums are for BVLCCaffe, which are incompatible with nvCaffe enums
     // below.
@@ -32,5 +32,5 @@ enum class WeightType {
     kNVSCALE = 3,
     kNVBIAS = 4
 };
-} // namespace nvcaffeparser1
-#endif // TRT_CAFFE_PARSER_WEIGHT_TYPE_H
+}  // namespace nvcaffeparser1
+#endif  // TRT_CAFFE_PARSER_WEIGHT_TYPE_H

@@ -14,9 +14,7 @@ namespace sinks {
 template <typename Mutex>
 class ostream_sink final : public base_sink<Mutex> {
 public:
-    explicit ostream_sink(std::ostream &os, bool force_flush = false)
-        : ostream_(os),
-          force_flush_(force_flush) {}
+    explicit ostream_sink(std::ostream &os, bool force_flush = false) : ostream_(os), force_flush_(force_flush) {}
     ostream_sink(const ostream_sink &) = delete;
     ostream_sink &operator=(const ostream_sink &) = delete;
 
@@ -30,7 +28,9 @@ protected:
         }
     }
 
-    void flush_() override { ostream_.flush(); }
+    void flush_() override {
+        ostream_.flush();
+    }
 
     std::ostream &ostream_;
     bool force_flush_;

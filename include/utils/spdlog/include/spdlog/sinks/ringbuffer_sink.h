@@ -3,14 +3,14 @@
 
 #pragma once
 
+#include <mutex>
+#include <string>
+#include <vector>
+
 #include "spdlog/details/circular_q.h"
 #include "spdlog/details/log_msg_buffer.h"
 #include "spdlog/details/null_mutex.h"
 #include "spdlog/sinks/base_sink.h"
-
-#include <mutex>
-#include <string>
-#include <vector>
 
 namespace spdlog {
 namespace sinks {
@@ -20,8 +20,7 @@ namespace sinks {
 template <typename Mutex>
 class ringbuffer_sink final : public base_sink<Mutex> {
 public:
-    explicit ringbuffer_sink(size_t n_items)
-        : q_{n_items} {}
+    explicit ringbuffer_sink(size_t n_items) : q_{n_items} {}
 
     std::vector<details::log_msg_buffer> last_raw(size_t lim = 0) {
         std::lock_guard<Mutex> lock(base_sink<Mutex>::mutex_);

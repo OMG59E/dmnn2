@@ -3,33 +3,25 @@
  * @Date: 2024-10-12 09:59:37
  * @LastEditTime: 2024-10-12 11:59:29
  * @FilePath: /dmnn2/src/plugin/common/kernels/normalizeLayer.cu
- * @Description: 
- * 
- * Copyright (c) 2024 by Chinasvt, All Rights Reserved. 
+ * @Description:
+ *
+ * Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
 
-#include "kernel.h"
 #include "../bboxUtils.h"
+#include "kernel.h"
 
 size_t normalizePluginWorkspaceSize(bool acrossSpatial, int C, int H, int W) {
     if (acrossSpatial)
         return sizeof(float) * C * H * W;
     else
-        return (size_t) 0;
+        return (size_t)0;
 }
 
-template<unsigned nthds_per_cta>
-__launch_bounds__(nthds_per_cta)
-__global__ void normalizeNotAcrossSpatialKernel(
-        const bool channelShared,
-        const int N,
-        const int C,
-        const int H,
-        const int W,
-        const float eps,
-        const float *scale,
-        float *inputData,
-        float *outputData) {
+template <unsigned nthds_per_cta>
+__launch_bounds__(nthds_per_cta) __global__
+    void normalizeNotAcrossSpatialKernel(const bool channelShared, const int N, const int C, const int H, const int W,
+                                         const float eps, const float *scale, float *inputData, float *outputData) {
     const int dim = C * H * W;
     const int spatialDim = H * W;
     const int tile = 32;
@@ -79,23 +71,16 @@ __global__ void normalizeNotAcrossSpatialKernel(
     }
 }
 
-pluginStatus_t normalizeNotAcrossSpatialGpu(
-        cudaStream_t stream,
-        const bool channelShared,
-        const int N,
-        const int C,
-        const int H,
-        const int W,
-        const float eps,
-        const void *scale,
-        const void *inputData,
-        void *outputData) {
+pluginStatus_t normalizeNotAcrossSpatialGpu(cudaStream_t stream, const bool channelShared, const int N, const int C,
+                                            const int H, const int W, const float eps, const void *scale,
+                                            const void *inputData, void *outputData) {
     const int BS = 128;
     const int GS = 256;
     // assumes warp size == 32
     if (BS % 32 != 0)
         LOG_FATAL("BS %d should be a multiple of 32", BS);
-    normalizeNotAcrossSpatialKernel < BS ><<<GS, BS, 0, stream>>>(channelShared, N, C, H, W, eps, (const float *) scale, (float *) inputData, (float *) outputData);
+    normalizeNotAcrossSpatialKernel<BS><<<GS, BS, 0, stream>>>(channelShared, N, C, H, W, eps, (const float *)scale,
+                                                               (float *)inputData, (float *)outputData);
     CUDACHECK(cudaGetLastError());
     return STATUS_SUCCESS;
 }
@@ -106,12 +91,8 @@ __global__ void squareKernel(const int n, const float *x, float *y) {
     }
 }
 
-__global__ void scalChannelKernel(
-        const int n,
-        const int spatialDim,
-        const float *inputData,
-        const float *scale,
-        float *outputData) {
+__global__ void scalChannelKernel(const int n, const int spatialDim, const float *inputData, const float *scale,
+                                  float *outputData) {
     for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += gridDim.x * blockDim.x) {
         // scale factors are indepedent across different channels
         // scale[i / spatialDim]: find the right scale factor for specific channels
@@ -119,29 +100,19 @@ __global__ void scalChannelKernel(
     }
 }
 
-pluginStatus_t normalizeInference(
-        cudaStream_t stream,
-        cublasHandle_t handle,
-        const bool acrossSpatial,
-        const bool channelShared,
-        const int N,
-        const int C,
-        const int H,
-        const int W,
-        const float eps,
-        const void *scale,
-        const void *inputData,
-        void *outputData,
-        void *workspace) {
+pluginStatus_t normalizeInference(cudaStream_t stream, cublasHandle_t handle, const bool acrossSpatial,
+                                  const bool channelShared, const int N, const int C, const int H, const int W,
+                                  const float eps, const void *scale, const void *inputData, void *outputData,
+                                  void *workspace) {
     const int dim = C * H * W;
     // Normalization is conducted for each sample from the batch indepdently
     if (acrossSpatial) {
-        float *input = (float *) const_cast<void *>(inputData);
-        float *output = (float *) outputData;
-        float *buffer = (float *) workspace;
+        float *input = (float *)const_cast<void *>(inputData);
+        float *output = (float *)outputData;
+        float *buffer = (float *)workspace;
         for (int n = 0; n < N; ++n) {
             // Take the square of each element in the input
-            squareKernel << < (dim + 511) / 512, 512, 0, stream >> > (dim, input, buffer);
+            squareKernel<<<(dim + 511) / 512, 512, 0, stream>>>(dim, input, buffer);
             float normsqr = 0.0F;
             // Sum up all the squared elements
             CUBLASCHECK(cublasSasum(handle, dim, buffer, 1, &normsqr));
@@ -154,17 +125,17 @@ pluginStatus_t normalizeInference(
             CUBLASCHECK(cublasSscal(handle, dim, &normsqr, output, 1));
             // If channel shared is true, scale all the outputs
             if (channelShared) {
-                CUBLASCHECK(cublasSscal(handle, dim, (float *) scale, output, 1));
-            } else { // Use different scale factors for different channels
+                CUBLASCHECK(cublasSscal(handle, dim, (float *)scale, output, 1));
+            } else {  // Use different scale factors for different channels
                 // scale the output according to channels
-                scalChannelKernel<<<(dim + 511) / 512, 512, 0, stream >>>(dim, H * W, output, (float *) scale, output);
+                scalChannelKernel<<<(dim + 511) / 512, 512, 0, stream>>>(dim, H * W, output, (float *)scale, output);
             }
             // Move cursors
             input += dim;
             output += dim;
         }
         return STATUS_SUCCESS;
-    } else { // Normalization ignoring the batch
+    } else {  // Normalization ignoring the batch
         return normalizeNotAcrossSpatialGpu(stream, channelShared, N, C, H, W, eps, scale, inputData, outputData);
     }
 }

@@ -35,7 +35,9 @@ public:
 
     // move cannot be default,
     // since we need to reset head_, tail_, etc to zero in the moved object
-    circular_q(circular_q &&other) SPDLOG_NOEXCEPT { copy_moveable(std::move(other)); }
+    circular_q(circular_q &&other) SPDLOG_NOEXCEPT {
+        copy_moveable(std::move(other));
+    }
 
     circular_q &operator=(circular_q &&other) SPDLOG_NOEXCEPT {
         copy_moveable(std::move(other));
@@ -58,9 +60,13 @@ public:
 
     // Return reference to the front item.
     // If there are no elements in the container, the behavior is undefined.
-    const T &front() const { return v_[head_]; }
+    const T &front() const {
+        return v_[head_];
+    }
 
-    T &front() { return v_[head_]; }
+    T &front() {
+        return v_[head_];
+    }
 
     // Return number of elements actually stored
     size_t size() const {
@@ -80,9 +86,13 @@ public:
 
     // Pop item from front.
     // If there are no elements in the container, the behavior is undefined.
-    void pop_front() { head_ = (head_ + 1) % max_items_; }
+    void pop_front() {
+        head_ = (head_ + 1) % max_items_;
+    }
 
-    bool empty() const { return tail_ == head_; }
+    bool empty() const {
+        return tail_ == head_;
+    }
 
     bool full() const {
         // head is ahead of the tail by 1
@@ -92,9 +102,13 @@ public:
         return false;
     }
 
-    size_t overrun_counter() const { return overrun_counter_; }
+    size_t overrun_counter() const {
+        return overrun_counter_;
+    }
 
-    void reset_overrun_counter() { overrun_counter_ = 0; }
+    void reset_overrun_counter() {
+        overrun_counter_ = 0;
+    }
 
 private:
     // copy from other&& and reset it to disabled state

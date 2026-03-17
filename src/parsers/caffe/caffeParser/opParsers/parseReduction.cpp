@@ -12,10 +12,8 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parseReduction(INetworkDefinition &network,
-                       const trtcaffe::LayerParameter &msg,
-                       CaffeWeightFactory &weightFactory,
-                       BlobNameToTensor &tensors) {
+ILayer *parseReduction(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                       CaffeWeightFactory &weightFactory, BlobNameToTensor &tensors) {
     // The first axis to reduce to a scalar -- may be negative to index from the
     // end (e.g., -1 for the last axis).
     // (Currently, only reduction along ALL "tail" axes is supported; reduction
@@ -43,13 +41,13 @@ ILayer *parseReduction(INetworkDefinition &network,
     const int MEAN = 4;
 
     const trtcaffe::ReductionParameter &p = msg.reduction_param();
-    bool hasOperation = p.has_operation();              // optional parameter
-    bool hasAxis = p.has_axis();                        // optional parameter
-    bool hasCoeff = p.has_coeff();                      // optional parameter
-    int operation = hasOperation ? p.operation() : SUM; // default is SUM
-    int axis = hasAxis ? p.axis() : 0;                  // default is 0
-    axis = (axis < 0) ? 4 + axis : axis;      // axis negative number correction
-    float coeff = hasCoeff ? p.coeff() : 1.0; // default is 1
+    bool hasOperation = p.has_operation();               // optional parameter
+    bool hasAxis = p.has_axis();                         // optional parameter
+    bool hasCoeff = p.has_coeff();                       // optional parameter
+    int operation = hasOperation ? p.operation() : SUM;  // default is SUM
+    int axis = hasAxis ? p.axis() : 0;                   // default is 0
+    axis = (axis < 0) ? 4 + axis : axis;                 // axis negative number correction
+    float coeff = hasCoeff ? p.coeff() : 1.0;            // default is 1
 
     // With implicit batch dimensions:
     //   acceptable axis values: 1, 2, 3, -1, -2, -3
@@ -65,18 +63,17 @@ ILayer *parseReduction(INetworkDefinition &network,
     //
     // protect against "garbage" input arguments
     if (axis < 0 || axis > 3) {
-        LOG_ERROR(
-            "Invalid axis in reduction layer - can only reduce NCHW input.");
+        LOG_ERROR("Invalid axis in reduction layer - can only reduce NCHW input.");
         return nullptr;
     }
     if (network.hasImplicitBatchDimension() && axis == 0) {
-        LOG_ERROR("Invalid axis in reduction layer - cannot reduce over batch "
-                  "size dimension.");
+        LOG_ERROR(
+            "Invalid axis in reduction layer - cannot reduce over batch "
+            "size dimension.");
         return nullptr;
     }
 
-    ReduceOperation op =
-        (operation == MEAN ? ReduceOperation::kAVG : ReduceOperation::kSUM);
+    ReduceOperation op = (operation == MEAN ? ReduceOperation::kAVG : ReduceOperation::kSUM);
     // For implicit batch, corrected axis values are 1, 2, 3
     // only reduction along tail dimensions is supported
     // 1 means 111 or 4 + 2 + 1 = 7
@@ -98,8 +95,7 @@ ILayer *parseReduction(INetworkDefinition &network,
     // axis == 1: 1u << axis is 2 and so 16 - 2 = 14 or 1110
     // axis == 2: 1u << axis is 4 and so 16 - 4 = 12 or 1100
     // axis == 3: 1u << axis is 8 and so 16 - 8 = 8 or 1000
-    uint32_t reduceAxes = (16 - (1u << axis)) >>
-                          static_cast<int>(network.hasImplicitBatchDimension());
+    uint32_t reduceAxes = (16 - (1u << axis)) >> static_cast<int>(network.hasImplicitBatchDimension());
 
     ITensor *input = tensors[msg.bottom(0)];
     ILayer *returnVal = nullptr;
@@ -107,15 +103,12 @@ ILayer *parseReduction(INetworkDefinition &network,
     if (operation == ASUM) {
         returnVal = network.addUnary(*input, UnaryOperation::kABS);
         input = returnVal->getOutput(0);
-        std::string layerName =
-            msg.name() + std::string("/reductionLayer/unaryLayer");
+        std::string layerName = msg.name() + std::string("/reductionLayer/unaryLayer");
         returnVal->setName(layerName.c_str());
     } else if (operation == SUMSQ) {
-        returnVal =
-            network.addElementWise(*input, *input, ElementWiseOperation::kPROD);
+        returnVal = network.addElementWise(*input, *input, ElementWiseOperation::kPROD);
         input = returnVal->getOutput(0);
-        std::string layerName =
-            msg.name() + std::string("/reductionLayer/elementWiseLayer");
+        std::string layerName = msg.name() + std::string("/reductionLayer/elementWiseLayer");
         returnVal->setName(layerName.c_str());
     }
 
@@ -126,13 +119,13 @@ ILayer *parseReduction(INetworkDefinition &network,
 #else
     returnVal = network.addReduce(*input, op, reduceAxes, true);
     // output a warning
-    LOG_WARNING("The Reduce layer does not discard reduced dimensions. The "
-                "reduced dimensions are treated as dimensions of size one in "
-                "the output of the Reduce layer.");
+    LOG_WARNING(
+        "The Reduce layer does not discard reduced dimensions. The "
+        "reduced dimensions are treated as dimensions of size one in "
+        "the output of the Reduce layer.");
 #endif
     input = returnVal->getOutput(0);
-    std::string reduceLayerName =
-        msg.name() + std::string("/reductionLayer/reduceLayer");
+    std::string reduceLayerName = msg.name() + std::string("/reductionLayer/reduceLayer");
     returnVal->setName(reduceLayerName.c_str());
 
     // need to add in layer after for coeff != 1.0
@@ -153,13 +146,11 @@ ILayer *parseReduction(INetworkDefinition &network,
         wScale = Weights{DataType::kFLOAT, scaleArr, 1};
         wPower = Weights{DataType::kFLOAT, powerArr, 1};
 
-        returnVal = network.addScale(*input, ScaleMode::kUNIFORM, wShift,
-                                     wScale, wPower);
-        std::string layerName =
-            msg.name() + std::string("/reductionLayer/scaleLayer");
+        returnVal = network.addScale(*input, ScaleMode::kUNIFORM, wShift, wScale, wPower);
+        std::string layerName = msg.name() + std::string("/reductionLayer/scaleLayer");
         returnVal->setName(layerName.c_str());
     }
 
     return returnVal;
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

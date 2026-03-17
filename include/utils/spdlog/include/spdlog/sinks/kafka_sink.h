@@ -10,13 +10,15 @@
 // https://github.com/confluentinc/librdkafka
 //
 
+#include <spdlog/common.h>
+
+#include <mutex>
+
 #include "spdlog/async.h"
 #include "spdlog/details/log_msg.h"
 #include "spdlog/details/null_mutex.h"
 #include "spdlog/details/synchronous_factory.h"
 #include "spdlog/sinks/base_sink.h"
-#include <mutex>
-#include <spdlog/common.h>
 
 // kafka header
 #include <librdkafka/rdkafkacpp.h>
@@ -30,24 +32,19 @@ struct kafka_sink_config {
     int32_t flush_timeout_ms = 1000;
 
     kafka_sink_config(std::string addr, std::string topic, int flush_timeout_ms = 1000)
-        : server_addr{std::move(addr)},
-          produce_topic{std::move(topic)},
-          flush_timeout_ms(flush_timeout_ms) {}
+        : server_addr{std::move(addr)}, produce_topic{std::move(topic)}, flush_timeout_ms(flush_timeout_ms) {}
 };
 
 template <typename Mutex>
 class kafka_sink : public base_sink<Mutex> {
 public:
-    kafka_sink(kafka_sink_config config)
-        : config_{std::move(config)} {
+    kafka_sink(kafka_sink_config config) : config_{std::move(config)} {
         try {
             std::string errstr;
             conf_.reset(RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
-            RdKafka::Conf::ConfResult confRes =
-                conf_->set("bootstrap.servers", config_.server_addr, errstr);
+            RdKafka::Conf::ConfResult confRes = conf_->set("bootstrap.servers", config_.server_addr, errstr);
             if (confRes != RdKafka::Conf::CONF_OK) {
-                throw_spdlog_ex(
-                    fmt_lib::format("conf set bootstrap.servers failed err:{}", errstr));
+                throw_spdlog_ex(fmt_lib::format("conf set bootstrap.servers failed err:{}", errstr));
             }
 
             tconf_.reset(RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC));
@@ -59,8 +56,7 @@ public:
             if (producer_ == nullptr) {
                 throw_spdlog_ex(fmt_lib::format("create producer failed err:{}", errstr));
             }
-            topic_.reset(RdKafka::Topic::create(producer_.get(), config_.produce_topic,
-                                                tconf_.get(), errstr));
+            topic_.reset(RdKafka::Topic::create(producer_.get(), config_.produce_topic, tconf_.get(), errstr));
             if (topic_ == nullptr) {
                 throw_spdlog_ex(fmt_lib::format("create topic failed err:{}", errstr));
             }
@@ -69,15 +65,19 @@ public:
         }
     }
 
-    ~kafka_sink() { producer_->flush(config_.flush_timeout_ms); }
+    ~kafka_sink() {
+        producer_->flush(config_.flush_timeout_ms);
+    }
 
 protected:
     void sink_it_(const details::log_msg &msg) override {
-        producer_->produce(topic_.get(), 0, RdKafka::Producer::RK_MSG_COPY,
-                           (void *)msg.payload.data(), msg.payload.size(), NULL, NULL);
+        producer_->produce(topic_.get(), 0, RdKafka::Producer::RK_MSG_COPY, (void *)msg.payload.data(),
+                           msg.payload.size(), NULL, NULL);
     }
 
-    void flush_() override { producer_->flush(config_.flush_timeout_ms); }
+    void flush_() override {
+        producer_->flush(config_.flush_timeout_ms);
+    }
 
 private:
     kafka_sink_config config_;
@@ -105,14 +105,14 @@ inline std::shared_ptr<logger> kafka_logger_st(const std::string &logger_name,
 }
 
 template <typename Factory = spdlog::async_factory>
-inline std::shared_ptr<spdlog::logger> kafka_logger_async_mt(
-    std::string logger_name, spdlog::sinks::kafka_sink_config config) {
+inline std::shared_ptr<spdlog::logger> kafka_logger_async_mt(std::string logger_name,
+                                                             spdlog::sinks::kafka_sink_config config) {
     return Factory::template create<sinks::kafka_sink_mt>(logger_name, config);
 }
 
 template <typename Factory = spdlog::async_factory>
-inline std::shared_ptr<spdlog::logger> kafka_logger_async_st(
-    std::string logger_name, spdlog::sinks::kafka_sink_config config) {
+inline std::shared_ptr<spdlog::logger> kafka_logger_async_st(std::string logger_name,
+                                                             spdlog::sinks::kafka_sink_config config) {
     return Factory::template create<sinks::kafka_sink_st>(logger_name, config);
 }
 

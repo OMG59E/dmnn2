@@ -20,13 +20,10 @@
 
 #include "../common/plugin.h"
 
-namespace nvinfer1
-{
-namespace plugin
-{
+namespace nvinfer1 {
+namespace plugin {
 
-struct EfficientNMSParameters
-{
+struct EfficientNMSParameters {
     // Related to NMS Options
     float iouThreshold = 0.5F;
     float scoreThreshold = 0.5F;
@@ -57,7 +54,7 @@ struct EfficientNMSParameters
     nvinfer1::DataType datatype = nvinfer1::DataType::kFLOAT;
 };
 
-} // namespace plugin
-} // namespace nvinfer1
+}  // namespace plugin
+}  // namespace nvinfer1
 
 #endif

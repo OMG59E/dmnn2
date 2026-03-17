@@ -4,7 +4,7 @@
 #pragma once
 
 #ifndef SPDLOG_HEADER_ONLY
-    #include <spdlog/sinks/ansicolor_sink.h>
+#include <spdlog/sinks/ansicolor_sink.h>
 #endif
 
 #include <spdlog/details/os.h>
@@ -31,8 +31,7 @@ SPDLOG_INLINE ansicolor_sink<ConsoleMutex>::ansicolor_sink(FILE *target_file, co
 }
 
 template <typename ConsoleMutex>
-SPDLOG_INLINE void ansicolor_sink<ConsoleMutex>::set_color(level::level_enum color_level,
-                                                           string_view_t color) {
+SPDLOG_INLINE void ansicolor_sink<ConsoleMutex>::set_color(level::level_enum color_level, string_view_t color) {
     std::lock_guard<mutex_t> lock(mutex_);
     colors_.at(static_cast<size_t>(color_level)) = to_string_(color);
 }
@@ -75,8 +74,7 @@ SPDLOG_INLINE void ansicolor_sink<ConsoleMutex>::set_pattern(const std::string &
 }
 
 template <typename ConsoleMutex>
-SPDLOG_INLINE void ansicolor_sink<ConsoleMutex>::set_formatter(
-    std::unique_ptr<spdlog::formatter> sink_formatter) {
+SPDLOG_INLINE void ansicolor_sink<ConsoleMutex>::set_formatter(std::unique_ptr<spdlog::formatter> sink_formatter) {
     std::lock_guard<mutex_t> lock(mutex_);
     formatter_ = std::move(sink_formatter);
 }
@@ -93,8 +91,7 @@ SPDLOG_INLINE void ansicolor_sink<ConsoleMutex>::set_color_mode(color_mode mode)
             should_do_colors_ = true;
             return;
         case color_mode::automatic:
-            should_do_colors_ =
-                details::os::in_terminal(target_file_) && details::os::is_color_terminal();
+            should_do_colors_ = details::os::in_terminal(target_file_) && details::os::is_color_terminal();
             return;
         case color_mode::never:
             should_do_colors_ = false;
@@ -110,9 +107,7 @@ SPDLOG_INLINE void ansicolor_sink<ConsoleMutex>::print_ccode_(const string_view_
 }
 
 template <typename ConsoleMutex>
-SPDLOG_INLINE void ansicolor_sink<ConsoleMutex>::print_range_(const memory_buf_t &formatted,
-                                                              size_t start,
-                                                              size_t end) {
+SPDLOG_INLINE void ansicolor_sink<ConsoleMutex>::print_range_(const memory_buf_t &formatted, size_t start, size_t end) {
     fwrite(formatted.data() + start, sizeof(char), end - start, target_file_);
 }
 

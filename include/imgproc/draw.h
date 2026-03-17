@@ -12,8 +12,6 @@
 #include "logging.h"
 
 namespace nv {
-void DECLSPEC_API circle(nv::Image &src, const nv::Point &p1, int radius,
-                         const nv::Color &color, int thickness = 1);
-void DECLSPEC_API rectangle(nv::Image &src, const nv::BoundingBox &bbox,
-                            const nv::Color &color, int thickness = 1);
+void DECLSPEC_API circle(nv::Image &src, const nv::Point &p1, int radius, const nv::Color &color, int thickness = 1);
+void DECLSPEC_API rectangle(nv::Image &src, const nv::BoundingBox &bbox, const nv::Color &color, int thickness = 1);
 }  // namespace nv

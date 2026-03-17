@@ -12,10 +12,8 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parseInterp(INetworkDefinition &network,
-                    const trtcaffe::LayerParameter &msg,
-                    CaffeWeightFactory & /*weightFactory*/,
-                    BlobNameToTensor &tensors) {
+ILayer *parseInterp(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                    CaffeWeightFactory & /*weightFactory*/, BlobNameToTensor &tensors) {
     if (!checkBlobs(msg, 1, 1))
         return nullptr;
 
@@ -29,8 +27,7 @@ ILayer *parseInterp(INetworkDefinition &network,
         return nullptr;
     }
 
-    nv::DimsCHW dims =
-        parserutils::getCHW(tensors[msg.bottom(0)]->getDimensions());
+    nv::DimsCHW dims = parserutils::getCHW(tensors[msg.bottom(0)]->getDimensions());
     // int in_c = dims.d[0];
     int in_h = dims.d[1];
     int in_w = dims.d[2];
@@ -88,4 +85,4 @@ ILayer *parseInterp(INetworkDefinition &network,
     layer->setOutputDimensions(Dims3{dims.d[0], out_h, out_w});
     return layer;
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

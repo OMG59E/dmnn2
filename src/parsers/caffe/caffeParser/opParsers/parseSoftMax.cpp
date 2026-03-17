@@ -12,10 +12,8 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parseSoftMax(INetworkDefinition &network,
-                     const trtcaffe::LayerParameter &msg,
-                     CaffeWeightFactory & /*weightFactory*/,
-                     BlobNameToTensor &tensors) {
+ILayer *parseSoftMax(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                     CaffeWeightFactory & /*weightFactory*/, BlobNameToTensor &tensors) {
     if (!checkBlobs(msg, 1, 1))
         return nullptr;
 
@@ -31,8 +29,8 @@ ILayer *parseSoftMax(INetworkDefinition &network,
     // To make sure we do not run into issues, negative axis won't be supported
     // in TensorRT
     int nbDims = tensors[msg.bottom(0)]->getDimensions().nbDims;
-    bool hasAxis = p.has_axis();       // optional parameter
-    int axis = hasAxis ? p.axis() : 1; // default is 1
+    bool hasAxis = p.has_axis();        // optional parameter
+    int axis = hasAxis ? p.axis() : 1;  // default is 1
 
     if (network.hasImplicitBatchDimension() && axis == 0) {
         LOG_ERROR(
@@ -42,9 +40,10 @@ ILayer *parseSoftMax(INetworkDefinition &network,
     }
 
     if (axis < 0 || axis > 3 || (axis > nbDims)) {
-        LOG_ERROR("Invalid axis in softmax layer - TensorRT expects NCHW "
-                  "input. Negative axis is not supported in TensorRT, please "
-                  "use positive axis indexing");
+        LOG_ERROR(
+            "Invalid axis in softmax layer - TensorRT expects NCHW "
+            "input. Negative axis is not supported in TensorRT, please "
+            "use positive axis indexing");
         return nullptr;
     }
 
@@ -55,10 +54,9 @@ ILayer *parseSoftMax(INetworkDefinition &network,
     // is not called will be 1 (the C dimension) NPCHW -> default axis when
     // setAxes is not called will be 2 (the C dimension)
     if (hasAxis) {
-        uint32_t axes = 1u << (axis - static_cast<int>(
-                                          network.hasImplicitBatchDimension()));
+        uint32_t axes = 1u << (axis - static_cast<int>(network.hasImplicitBatchDimension()));
         softmax->setAxes(axes);
     }
     return softmax;
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

@@ -7,18 +7,20 @@
  *
  * Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
+#include <NvCaffeParser.h>
+#include <NvInferPlugin.h>
+#include <string.h>
+
+#include <cassert>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
+
 #include "argparse/argparse.hpp"
 #include "calibrator.h"
 #include "error_check.h"
 #include "trt_logger.h"
-#include <NvCaffeParser.h>
-#include <NvInferPlugin.h>
-#include <cassert>
-#include <fstream>
-#include <iostream>
-#include <string.h>
-#include <string>
-#include <vector>
 
 using namespace nvinfer1;
 using namespace nvcaffeparser1;
@@ -51,47 +53,22 @@ bool parseArgs(int argc, char **argv) {
         .help("model output names")
         .required()
         .nargs(argparse::nargs_pattern::at_least_one);
-    parser.add_argument("--engine")
-        .help("Engine file to serialize to")
-        .required();
-    parser.add_argument("--batch")
-        .help("Set batch size")
-        .default_value(1)
-        .scan<'i', int>();
+    parser.add_argument("--engine").help("Engine file to serialize to").required();
+    parser.add_argument("--batch").help("Set batch size").default_value(1).scan<'i', int>();
     parser.add_argument("--dtype")
         .help("Run in precision mode. Support fp32/fp16/int8")
         .default_value(std::string("fp16"));
-    parser.add_argument("--device")
-        .help("Set cuda device to N")
-        .default_value(0)
-        .scan<'i', int>();
-    parser.add_argument("--DLACore")
-        .help("Set DLACore to N")
-        .default_value(-1)
-        .scan<'i', int>();
-    parser.add_argument("--iter")
-        .help("Run N iterations")
-        .default_value(1)
-        .scan<'i', int>();
+    parser.add_argument("--device").help("Set cuda device to N").default_value(0).scan<'i', int>();
+    parser.add_argument("--DLACore").help("Set DLACore to N").default_value(-1).scan<'i', int>();
+    parser.add_argument("--iter").help("Run N iterations").default_value(1).scan<'i', int>();
     parser.add_argument("--avg_iter")
         .help("Set the number of averaging iterations used when timing layers")
         .default_value(1)
         .scan<'i', int>();
-    parser.add_argument("--workspace")
-        .help("Set workspace size in MBytes")
-        .default_value(512)
-        .scan<'i', int>();
-    parser.add_argument("--calib_data")
-        .help("Set calibration data dir, for int8 mode")
-        .default_value("");
-    parser.add_argument("--calib_batch")
-        .help("Set calibration batch")
-        .default_value(1)
-        .scan<'i', int>();
-    parser.add_argument("--calib_max_batch_idx")
-        .help("Set calibration max batch")
-        .default_value(100)
-        .scan<'i', int>();
+    parser.add_argument("--workspace").help("Set workspace size in MBytes").default_value(512).scan<'i', int>();
+    parser.add_argument("--calib_data").help("Set calibration data dir, for int8 mode").default_value("");
+    parser.add_argument("--calib_batch").help("Set calibration batch").default_value(1).scan<'i', int>();
+    parser.add_argument("--calib_max_batch_idx").help("Set calibration max batch").default_value(100).scan<'i', int>();
 
     try {
         parser.parse_args(argc, argv);
@@ -103,8 +80,7 @@ bool parseArgs(int argc, char **argv) {
     gParams.deployFile = parser.get<std::string>("--deploy");
     gParams.modelFile = parser.get<std::string>("--model");
     gParams.engine = parser.get<std::string>("--engine");
-    gParams.output_names =
-        parser.get<std::vector<std::string>>("--output_names");
+    gParams.output_names = parser.get<std::vector<std::string>>("--output_names");
     gParams.batchSize = parser.get<int>("--batch");
     gParams.iterations = parser.get<int>("--iter");
     gParams.avgRuns = parser.get<int>("--avg_iter");
@@ -126,36 +102,28 @@ bool parseArgs(int argc, char **argv) {
     return true;
 }
 
-bool caffeToTrtModel(IInt8Calibrator *calibrator,
-                     nvinfer1::IHostMemory **trtModelStream) {
+bool caffeToTrtModel(IInt8Calibrator *calibrator, nvinfer1::IHostMemory **trtModelStream) {
     IBuilder *builder = createInferBuilder(gLogger);
     auto networkFlags =
-        gParams.batchSize
-            ? 0U
-            : 1U << static_cast<uint32_t>(
-                  nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
+        gParams.batchSize ? 0U : 1U << static_cast<uint32_t>(nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
     // parse the caffe model to populate the network, then set the outputs
     INetworkDefinition *network = builder->createNetworkV2(networkFlags);
     ICaffeParser *parser = createCaffeParser();
-    if (gParams.dataType == DataType::kINT8 &&
-        !builder->platformHasFastInt8()) {
+    if (gParams.dataType == DataType::kINT8 && !builder->platformHasFastInt8()) {
         LOG_ERROR("The device for INT8 run since its not supported.");
         return false;
     }
     if (gParams.dataType == DataType::kINT8) {
-        calibrator = new nv::Int8EntropyCalibrator(
-            gParams.calibrationData, network, gParams.calibBatchSize,
-            gParams.calibMaxBatchIdx);
+        calibrator = new nv::Int8EntropyCalibrator(gParams.calibrationData, network, gParams.calibBatchSize,
+                                                   gParams.calibMaxBatchIdx);
     }
-    if (gParams.dataType == DataType::kHALF &&
-        !builder->platformHasFastFp16()) {
+    if (gParams.dataType == DataType::kHALF && !builder->platformHasFastFp16()) {
         LOG_ERROR("The device for FP16 run since its not supported.");
         return false;
     }
-    const IBlobNameToTensor *blobNameToTensor = parser->parse(
-        gParams.deployFile.c_str(), gParams.modelFile.c_str(), *network,
-        gParams.dataType == DataType::kINT8 ? DataType::kFLOAT
-                                            : gParams.dataType);
+    const IBlobNameToTensor *blobNameToTensor =
+        parser->parse(gParams.deployFile.c_str(), gParams.modelFile.c_str(), *network,
+                      gParams.dataType == DataType::kINT8 ? DataType::kFLOAT : gParams.dataType);
     // specify which tensors are outputs
     for (const auto &output_name : gParams.output_names) {
         if (!blobNameToTensor->find(output_name.c_str())) {
@@ -184,14 +152,14 @@ bool caffeToTrtModel(IInt8Calibrator *calibrator,
         config->setFlag(BuilderFlag::kSTRICT_TYPES);
         config->setFlag(BuilderFlag::kGPU_FALLBACK);
         if (gParams.batchSize > builder->getMaxDLABatchSize()) {
-            LOG_WARNING("Requested batch size {} is greater than the max DLA "
-                        "batch size of {}. Reducing batch size accordingly.",
-                        gParams.batchSize, builder->getMaxDLABatchSize());
+            LOG_WARNING(
+                "Requested batch size {} is greater than the max DLA "
+                "batch size of {}. Reducing batch size accordingly.",
+                gParams.batchSize, builder->getMaxDLABatchSize());
             gParams.batchSize = builder->getMaxDLABatchSize();
         }
     }
-    config->setMaxWorkspaceSize(static_cast<size_t>(gParams.workspaceSize)
-                                << 20);
+    config->setMaxWorkspaceSize(static_cast<size_t>(gParams.workspaceSize) << 20);
     builder->setMaxBatchSize(gParams.batchSize);
     ICudaEngine *engine = builder->buildEngineWithConfig(*network, *config);
     if (!engine) {
@@ -229,10 +197,8 @@ int main(int argc, char **argv) {
         return -1;
     }
     std::ofstream trtModelFile(gParams.engine.c_str(), std::ios::binary);
-    trtModelFile.write((const char *)(trtModelStream->data()),
-                       trtModelStream->size());
-    LOG_INFO("Convert model to tensor model cache: {} completed.",
-             gParams.engine.c_str());
+    trtModelFile.write((const char *)(trtModelStream->data()), trtModelStream->size());
+    LOG_INFO("Convert model to tensor model cache: {} completed.", gParams.engine.c_str());
     trtModelFile.close();
     trtModelStream->destroy();
     SAFE_FREE(calibrator);

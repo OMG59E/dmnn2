@@ -9,6 +9,7 @@
  */
 #include <NvInfer.h>
 #include <NvInferPlugin.h>
+
 #include <algorithm>
 #include <array>
 #include <iostream>
@@ -37,29 +38,22 @@ using namespace nvinfer1::plugin;
 
 namespace nvinfer1::plugin {
 ILogger *gLogger{};
-template <typename CreatorType> class InitializePlugin {
+template <typename CreatorType>
+class InitializePlugin {
 public:
-    InitializePlugin(void *logger, const char *libNamespace)
-        : mCreator{new CreatorType{}} {
+    InitializePlugin(void *logger, const char *libNamespace) : mCreator{new CreatorType{}} {
         mCreator->setPluginNamespace(libNamespace);
-        bool status =
-            getPluginRegistry()->registerCreator(*mCreator, libNamespace);
+        bool status = getPluginRegistry()->registerCreator(*mCreator, libNamespace);
         if (logger) {
-            nvinfer1::plugin::gLogger =
-                static_cast<nvinfer1::ILogger *>(logger);
+            nvinfer1::plugin::gLogger = static_cast<nvinfer1::ILogger *>(logger);
             if (!status) {
-                std::string errorMsg{
-                    "Could not register plugin creator:  " +
-                    std::string(mCreator->getPluginName()) + " in namespace: " +
-                    std::string{mCreator->getPluginNamespace()}};
-                nvinfer1::plugin::gLogger->log(ILogger::Severity::kERROR,
-                                               errorMsg.c_str());
+                std::string errorMsg{"Could not register plugin creator:  " + std::string(mCreator->getPluginName()) +
+                                     " in namespace: " + std::string{mCreator->getPluginNamespace()}};
+                nvinfer1::plugin::gLogger->log(ILogger::Severity::kERROR, errorMsg.c_str());
             } else {
-                std::string verboseMsg{
-                    "Plugin Creator registration succeeded - " +
-                    std::string{mCreator->getPluginName()}};
-                nvinfer1::plugin::gLogger->log(ILogger::Severity::kVERBOSE,
-                                               verboseMsg.c_str());
+                std::string verboseMsg{"Plugin Creator registration succeeded - " +
+                                       std::string{mCreator->getPluginName()}};
+                nvinfer1::plugin::gLogger->log(ILogger::Severity::kVERBOSE, verboseMsg.c_str());
             }
         }
     }
@@ -78,44 +72,28 @@ void initializePlugin(void *logger, const char *libNamespace) {
 extern "C" {
 bool initLibNvInferPlugins(void *logger, const char *libNamespace) {
     initializePlugin<nvinfer1::plugin::NMSPluginCreator>(logger, libNamespace);
-    initializePlugin<nvinfer1::plugin::NMSPluginV2Creator>(logger,
-                                                           libNamespace);
-    initializePlugin<nvinfer1::plugin::PriorBoxPluginCreator>(logger,
-                                                              libNamespace);
-    initializePlugin<nvinfer1::plugin::NormalizePluginCreator>(logger,
-                                                               libNamespace);
+    initializePlugin<nvinfer1::plugin::NMSPluginV2Creator>(logger, libNamespace);
+    initializePlugin<nvinfer1::plugin::PriorBoxPluginCreator>(logger, libNamespace);
+    initializePlugin<nvinfer1::plugin::NormalizePluginCreator>(logger, libNamespace);
     // initializePlugin<nvinfer1::plugin::FlattenPluginCreator>(logger,
     // libNamespace);
     // initializePlugin<nvinfer1::plugin::InterpPluginCreator>(logger,
     // libNamespace);
-    initializePlugin<nvinfer1::plugin::SlicePluginCreator>(logger,
-                                                           libNamespace);
-    initializePlugin<nvinfer1::plugin::ScaleV2PluginCreator>(logger,
-                                                             libNamespace);
+    initializePlugin<nvinfer1::plugin::SlicePluginCreator>(logger, libNamespace);
+    initializePlugin<nvinfer1::plugin::ScaleV2PluginCreator>(logger, libNamespace);
     // initializePlugin<nvinfer1::plugin::UpsamplePluginCreator>(logger,
     // libNamespace);
-    initializePlugin<nvinfer1::plugin::YOLOBoxPluginCreator>(logger,
-                                                             libNamespace);
-    initializePlugin<nvinfer1::plugin::YOLONMSPluginCreator>(logger,
-                                                             libNamespace);
-    initializePlugin<nvinfer1::plugin::YOLONMSPluginV2Creator>(logger,
-                                                               libNamespace);
-    initializePlugin<nvinfer1::plugin::YOLONMSDynamicPluginCreator>(
-        logger, libNamespace);
-    initializePlugin<nvinfer1::plugin::YOLONMSDynamicPluginV2Creator>(
-        logger, libNamespace);
-    initializePlugin<nvinfer1::plugin::CenterNMSPluginCreator>(logger,
-                                                               libNamespace);
-    initializePlugin<nvinfer1::plugin::YOLOXNMSPluginCreator>(logger,
-                                                              libNamespace);
-    initializePlugin<nvinfer1::plugin::FocusPluginCreator>(logger,
-                                                           libNamespace);
-    initializePlugin<nvinfer1::plugin::InstanceNormalizationPluginCreator>(
-        logger, libNamespace);
-    initializePlugin<nvinfer1::plugin::EfficientNMSONNXPluginCreator>(
-        logger, libNamespace);
-    initializePlugin<nvinfer1::plugin::EfficientNMSPluginCreator>(logger,
-                                                                  libNamespace);
+    initializePlugin<nvinfer1::plugin::YOLOBoxPluginCreator>(logger, libNamespace);
+    initializePlugin<nvinfer1::plugin::YOLONMSPluginCreator>(logger, libNamespace);
+    initializePlugin<nvinfer1::plugin::YOLONMSPluginV2Creator>(logger, libNamespace);
+    initializePlugin<nvinfer1::plugin::YOLONMSDynamicPluginCreator>(logger, libNamespace);
+    initializePlugin<nvinfer1::plugin::YOLONMSDynamicPluginV2Creator>(logger, libNamespace);
+    initializePlugin<nvinfer1::plugin::CenterNMSPluginCreator>(logger, libNamespace);
+    initializePlugin<nvinfer1::plugin::YOLOXNMSPluginCreator>(logger, libNamespace);
+    initializePlugin<nvinfer1::plugin::FocusPluginCreator>(logger, libNamespace);
+    initializePlugin<nvinfer1::plugin::InstanceNormalizationPluginCreator>(logger, libNamespace);
+    initializePlugin<nvinfer1::plugin::EfficientNMSONNXPluginCreator>(logger, libNamespace);
+    initializePlugin<nvinfer1::plugin::EfficientNMSPluginCreator>(logger, libNamespace);
     return true;
 }
 }  // extern "C"

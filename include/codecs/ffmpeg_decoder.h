@@ -31,12 +31,24 @@ public:
 
     int open(const std::string &video_path, int device_id);
     int read(nv::Frame &frame, bool use_key = false);
-    int height() const { return height_; };
-    int width() const { return width_; };
-    float frame_rate() const { return frame_rate_; }
-    float duration() const { return duration_; }
-    int64_t total_frames() const { return total_frames_; }
-    int64_t total_decoded_frames() const { return total_decoded_frames_; }
+    int height() const {
+        return height_;
+    };
+    int width() const {
+        return width_;
+    };
+    float frame_rate() const {
+        return frame_rate_;
+    }
+    float duration() const {
+        return duration_;
+    }
+    int64_t total_frames() const {
+        return total_frames_;
+    }
+    int64_t total_decoded_frames() const {
+        return total_decoded_frames_;
+    }
 
 private:
     std::string decoder_name() const;

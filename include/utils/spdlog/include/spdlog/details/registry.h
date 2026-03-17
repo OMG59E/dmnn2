@@ -125,5 +125,5 @@ private:
 }  // namespace spdlog
 
 #ifdef SPDLOG_HEADER_ONLY
-    #include "registry-inl.h"
+#include "registry-inl.h"
 #endif

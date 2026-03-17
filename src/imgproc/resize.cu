@@ -20,8 +20,7 @@ static __inline__ __device__ int resize_cast(int value) {
     return (value + (1 << (CAST_BITS - 1))) >> CAST_BITS;
 }
 
-inline int getResizeParam(const nv::Image &src, const nv::Image &dst,
-                          nv::PaddingMode padding_mode, int &target_h,
+inline int getResizeParam(const nv::Image &src, const nv::Image &dst, nv::PaddingMode padding_mode, int &target_h,
                           int &target_w, int &start_y, int &start_x) {
     int input_h = dst.h();
     int input_w = dst.w();
@@ -61,9 +60,8 @@ inline int getResizeParam(const nv::Image &src, const nv::Image &dst,
 
 namespace nv {
 template <typename T>
-__device__ float calcScaleVal(const T *src, int channels, int src_h, int src_w,
-                              int dst_h, int dst_w, int dx, int dy, int dc,
-                              nv::ColorType color_type) {
+__device__ float calcScaleVal(const T *src, int channels, int src_h, int src_w, int dst_h, int dst_w, int dx, int dy,
+                              int dc, nv::ColorType color_type) {
     float scale_x = (float)src_w / dst_w;
     float scale_y = (float)src_h / dst_h;
     float fx = (dx + 0.5f) * scale_x - 0.5f;  // 原图浮点坐标
@@ -96,32 +94,29 @@ __device__ float calcScaleVal(const T *src, int channels, int src_h, int src_w,
     cbufy.y = fy;
     float v00, v01, v10, v11;
     switch (color_type) {
-    case nv::COLOR_TYPE_BGR888_PACKED:
-    case nv::COLOR_TYPE_RGB888_PACKED:
-        v00 = src[(sy + 0) * src_w * channels + (sx + 0) * channels + dc];
-        v01 = src[(sy + 1) * src_w * channels + (sx + 0) * channels + dc];
-        v10 = src[(sy + 0) * src_w * channels + (sx + 1) * channels + dc];
-        v11 = src[(sy + 1) * src_w * channels + (sx + 1) * channels + dc];
-        break;
-    case nv::COLOR_TYPE_BGR888_PLANAR:
-    case nv::COLOR_TYPE_RGB888_PLANAR:
-        v00 = src[dc * src_h * src_w + (sy + 0) * src_w + (sx + 0)];
-        v01 = src[dc * src_h * src_w + (sy + 1) * src_w + (sx + 0)];
-        v10 = src[dc * src_h * src_w + (sy + 0) * src_w + (sx + 1)];
-        v11 = src[dc * src_h * src_w + (sy + 1) * src_w + (sx + 1)];
-    default:
-        break;
+        case nv::COLOR_TYPE_BGR888_PACKED:
+        case nv::COLOR_TYPE_RGB888_PACKED:
+            v00 = src[(sy + 0) * src_w * channels + (sx + 0) * channels + dc];
+            v01 = src[(sy + 1) * src_w * channels + (sx + 0) * channels + dc];
+            v10 = src[(sy + 0) * src_w * channels + (sx + 1) * channels + dc];
+            v11 = src[(sy + 1) * src_w * channels + (sx + 1) * channels + dc];
+            break;
+        case nv::COLOR_TYPE_BGR888_PLANAR:
+        case nv::COLOR_TYPE_RGB888_PLANAR:
+            v00 = src[dc * src_h * src_w + (sy + 0) * src_w + (sx + 0)];
+            v01 = src[dc * src_h * src_w + (sy + 1) * src_w + (sx + 0)];
+            v10 = src[dc * src_h * src_w + (sy + 0) * src_w + (sx + 1)];
+            v11 = src[dc * src_h * src_w + (sy + 1) * src_w + (sx + 1)];
+        default:
+            break;
     }
-    return cbufx.x * cbufy.x * v00 + cbufx.x * cbufy.y * v01 +
-           cbufx.y * cbufy.x * v10 + cbufx.y * cbufy.y * v11;
+    return cbufx.x * cbufy.x * v00 + cbufx.x * cbufy.y * v01 + cbufx.y * cbufy.x * v10 + cbufx.y * cbufy.y * v11;
 }
 
 // reference:
 // https://github.com/OpenPPL/ppl.cv/blob/04ef4ca48262601b99f1bb918dcd005311f331da/src/ppl/cv/cuda/resize.cu
-__device__ unsigned char calcScaleVal2(const unsigned char *src, int channels,
-                                       int src_h, int src_w, int dst_h,
-                                       int dst_w, int dx, int dy, int dc,
-                                       nv::ColorType color_type) {
+__device__ unsigned char calcScaleVal2(const unsigned char *src, int channels, int src_h, int src_w, int dst_h,
+                                       int dst_w, int dx, int dy, int dc, nv::ColorType color_type) {
     float scale_x = (float)src_w / dst_w;
     float scale_y = (float)src_h / dst_h;
     float fx = (dx + 0.5f) * scale_x - 0.5f;  // 原图浮点坐标
@@ -162,45 +157,41 @@ __device__ unsigned char calcScaleVal2(const unsigned char *src, int channels,
 
     float v00, v01, v10, v11;
     switch (color_type) {
-    case nv::COLOR_TYPE_BGR888_PACKED:
-    case nv::COLOR_TYPE_RGB888_PACKED:  // HWC
-        v00 = src[sy0 * src_w * channels + sx0 * channels + dc];
-        v01 = src[sy0 * src_w * channels + sx1 * channels + dc];
-        v10 = src[sy1 * src_w * channels + sx0 * channels + dc];
-        v11 = src[sy1 * src_w * channels + sx1 * channels + dc];
-        break;
-    case nv::COLOR_TYPE_BGR888_PLANAR:
-    case nv::COLOR_TYPE_RGB888_PLANAR:  // CHW
-        v00 = src[dc * src_h * src_w + sy0 * src_w + sx0];
-        v01 = src[dc * src_h * src_w + sy0 * src_w + sx1];
-        v10 = src[dc * src_h * src_w + sy1 * src_w + sx0];
-        v11 = src[dc * src_h * src_w + sy1 * src_w + sx1];
-    default:
-        break;
+        case nv::COLOR_TYPE_BGR888_PACKED:
+        case nv::COLOR_TYPE_RGB888_PACKED:  // HWC
+            v00 = src[sy0 * src_w * channels + sx0 * channels + dc];
+            v01 = src[sy0 * src_w * channels + sx1 * channels + dc];
+            v10 = src[sy1 * src_w * channels + sx0 * channels + dc];
+            v11 = src[sy1 * src_w * channels + sx1 * channels + dc];
+            break;
+        case nv::COLOR_TYPE_BGR888_PLANAR:
+        case nv::COLOR_TYPE_RGB888_PLANAR:  // CHW
+            v00 = src[dc * src_h * src_w + sy0 * src_w + sx0];
+            v01 = src[dc * src_h * src_w + sy0 * src_w + sx1];
+            v10 = src[dc * src_h * src_w + sy1 * src_w + sx0];
+            v11 = src[dc * src_h * src_w + sy1 * src_w + sx1];
+        default:
+            break;
     }
-    return resize_cast(cbufx.x * cbufy.x * v00 + cbufx.y * cbufy.x * v01 +
-                       cbufx.x * cbufy.y * v10 + cbufx.y * cbufy.y * v11);
+    return resize_cast(cbufx.x * cbufy.x * v00 + cbufx.y * cbufy.x * v01 + cbufx.x * cbufy.y * v10 +
+                       cbufx.y * cbufy.y * v11);
 }
 
-__global__ void resizePaddingCvtColorNorm_kernel(
-    const int nbThreads, const unsigned char *src, int channels, int src_h,
-    int src_w, nv::ColorType src_color_type, float *dst, int dst_h, int dst_w,
-    nv::ColorType dst_color_type, int target_h, int target_w, int start_y,
-    int start_x, float3 mean_vals, float3 std_vals, float3 padding_values) {
+__global__ void resizePaddingCvtColorNorm_kernel(const int nbThreads, const unsigned char *src, int channels, int src_h,
+                                                 int src_w, nv::ColorType src_color_type, float *dst, int dst_h,
+                                                 int dst_w, nv::ColorType dst_color_type, int target_h, int target_w,
+                                                 int start_y, int start_x, float3 mean_vals, float3 std_vals,
+                                                 float3 padding_values) {
     CUDA_KERNEL_LOOP(idx, nbThreads) {
         int dx = idx % dst_w;
         int dy = idx / dst_w;
         uchar3 pixel;
-        if ((dx >= start_x && dx < target_w + start_x) &&
-            (dy >= start_y && dy < target_h + start_y)) {
+        if ((dx >= start_x && dx < target_w + start_x) && (dy >= start_y && dy < target_h + start_y)) {
             int tx = dx - start_x;
             int ty = dy - start_y;
-            pixel.x = calcScaleVal2(src, channels, src_h, src_w, target_h,
-                                    target_w, tx, ty, 0, src_color_type);
-            pixel.y = calcScaleVal2(src, channels, src_h, src_w, target_h,
-                                    target_w, tx, ty, 1, src_color_type);
-            pixel.z = calcScaleVal2(src, channels, src_h, src_w, target_h,
-                                    target_w, tx, ty, 2, src_color_type);
+            pixel.x = calcScaleVal2(src, channels, src_h, src_w, target_h, target_w, tx, ty, 0, src_color_type);
+            pixel.y = calcScaleVal2(src, channels, src_h, src_w, target_h, target_w, tx, ty, 1, src_color_type);
+            pixel.z = calcScaleVal2(src, channels, src_h, src_w, target_h, target_w, tx, ty, 2, src_color_type);
         } else {
             pixel.x = padding_values.x;
             pixel.y = padding_values.y;
@@ -208,64 +199,47 @@ __global__ void resizePaddingCvtColorNorm_kernel(
         }
 
         switch (dst_color_type) {
-        case nv::COLOR_TYPE_BGR888_PACKED:
-            dst[dy * dst_w * channels + dx * channels + 0] =
-                (pixel.x - mean_vals.x) / std_vals.x;
-            dst[dy * dst_w * channels + dx * channels + 1] =
-                (pixel.y - mean_vals.y) / std_vals.y;
-            dst[dy * dst_w * channels + dx * channels + 2] =
-                (pixel.z - mean_vals.z) / std_vals.z;
-            break;
-        case nv::COLOR_TYPE_RGB888_PACKED:
-            dst[dy * dst_w * channels + dx * channels + 2] =
-                (pixel.x - mean_vals.x) / std_vals.x;
-            dst[dy * dst_w * channels + dx * channels + 1] =
-                (pixel.y - mean_vals.y) / std_vals.y;
-            dst[dy * dst_w * channels + dx * channels + 0] =
-                (pixel.z - mean_vals.z) / std_vals.z;
-            break;
-        case nv::COLOR_TYPE_BGR888_PLANAR:
-            dst[0 * dst_h * dst_w + dy * dst_w + dx] =
-                (pixel.x - mean_vals.x) / std_vals.x;
-            dst[1 * dst_h * dst_w + dy * dst_w + dx] =
-                (pixel.y - mean_vals.y) / std_vals.y;
-            dst[2 * dst_h * dst_w + dy * dst_w + dx] =
-                (pixel.z - mean_vals.z) / std_vals.z;
-            break;
-        case nv::COLOR_TYPE_RGB888_PLANAR:
-            dst[2 * dst_h * dst_w + dy * dst_w + dx] =
-                (pixel.x - mean_vals.x) / std_vals.x;
-            dst[1 * dst_h * dst_w + dy * dst_w + dx] =
-                (pixel.y - mean_vals.y) / std_vals.y;
-            dst[0 * dst_h * dst_w + dy * dst_w + dx] =
-                (pixel.z - mean_vals.z) / std_vals.z;
-            break;
-        default:
-            printf("Not support color convert\n");
-            return;
+            case nv::COLOR_TYPE_BGR888_PACKED:
+                dst[dy * dst_w * channels + dx * channels + 0] = (pixel.x - mean_vals.x) / std_vals.x;
+                dst[dy * dst_w * channels + dx * channels + 1] = (pixel.y - mean_vals.y) / std_vals.y;
+                dst[dy * dst_w * channels + dx * channels + 2] = (pixel.z - mean_vals.z) / std_vals.z;
+                break;
+            case nv::COLOR_TYPE_RGB888_PACKED:
+                dst[dy * dst_w * channels + dx * channels + 2] = (pixel.x - mean_vals.x) / std_vals.x;
+                dst[dy * dst_w * channels + dx * channels + 1] = (pixel.y - mean_vals.y) / std_vals.y;
+                dst[dy * dst_w * channels + dx * channels + 0] = (pixel.z - mean_vals.z) / std_vals.z;
+                break;
+            case nv::COLOR_TYPE_BGR888_PLANAR:
+                dst[0 * dst_h * dst_w + dy * dst_w + dx] = (pixel.x - mean_vals.x) / std_vals.x;
+                dst[1 * dst_h * dst_w + dy * dst_w + dx] = (pixel.y - mean_vals.y) / std_vals.y;
+                dst[2 * dst_h * dst_w + dy * dst_w + dx] = (pixel.z - mean_vals.z) / std_vals.z;
+                break;
+            case nv::COLOR_TYPE_RGB888_PLANAR:
+                dst[2 * dst_h * dst_w + dy * dst_w + dx] = (pixel.x - mean_vals.x) / std_vals.x;
+                dst[1 * dst_h * dst_w + dy * dst_w + dx] = (pixel.y - mean_vals.y) / std_vals.y;
+                dst[0 * dst_h * dst_w + dy * dst_w + dx] = (pixel.z - mean_vals.z) / std_vals.z;
+                break;
+            default:
+                printf("Not support color convert\n");
+                return;
         }
     }
 }
 
-__global__ void resizePaddingCvtColor_kernel(
-    const int nbThreads, const unsigned char *src, int channels, int src_h,
-    int src_w, nv::ColorType src_color_type, unsigned char *dst, int dst_h,
-    int dst_w, nv::ColorType dst_color_type, int target_h, int target_w,
-    int start_y, int start_x, float3 padding_values) {
+__global__ void resizePaddingCvtColor_kernel(const int nbThreads, const unsigned char *src, int channels, int src_h,
+                                             int src_w, nv::ColorType src_color_type, unsigned char *dst, int dst_h,
+                                             int dst_w, nv::ColorType dst_color_type, int target_h, int target_w,
+                                             int start_y, int start_x, float3 padding_values) {
     CUDA_KERNEL_LOOP(idx, nbThreads) {
         int dx = idx % dst_w;
         int dy = idx / dst_w;
         uchar3 pixel;
-        if ((dx >= start_x && dx < target_w + start_x) &&
-            (dy >= start_y && dy < target_h + start_y)) {
+        if ((dx >= start_x && dx < target_w + start_x) && (dy >= start_y && dy < target_h + start_y)) {
             int tx = dx - start_x;
             int ty = dy - start_y;
-            pixel.x = calcScaleVal2(src, channels, src_h, src_w, target_h,
-                                    target_w, tx, ty, 0, src_color_type);
-            pixel.y = calcScaleVal2(src, channels, src_h, src_w, target_h,
-                                    target_w, tx, ty, 1, src_color_type);
-            pixel.z = calcScaleVal2(src, channels, src_h, src_w, target_h,
-                                    target_w, tx, ty, 2, src_color_type);
+            pixel.x = calcScaleVal2(src, channels, src_h, src_w, target_h, target_w, tx, ty, 0, src_color_type);
+            pixel.y = calcScaleVal2(src, channels, src_h, src_w, target_h, target_w, tx, ty, 1, src_color_type);
+            pixel.z = calcScaleVal2(src, channels, src_h, src_w, target_h, target_w, tx, ty, 2, src_color_type);
         } else {
             pixel.x = padding_values.x;
             pixel.y = padding_values.y;
@@ -273,171 +247,141 @@ __global__ void resizePaddingCvtColor_kernel(
         }
 
         switch (dst_color_type) {
-        case nv::COLOR_TYPE_BGR888_PACKED:
-            dst[dy * dst_w * channels + dx * channels + 0] = pixel.x;
-            dst[dy * dst_w * channels + dx * channels + 1] = pixel.y;
-            dst[dy * dst_w * channels + dx * channels + 2] = pixel.z;
-            break;
-        case nv::COLOR_TYPE_RGB888_PACKED:
-            dst[dy * dst_w * channels + dx * channels + 2] = pixel.x;
-            dst[dy * dst_w * channels + dx * channels + 1] = pixel.y;
-            dst[dy * dst_w * channels + dx * channels + 0] = pixel.z;
-            break;
-        case nv::COLOR_TYPE_BGR888_PLANAR:
-            dst[0 * dst_h * dst_w + dy * dst_w + dx] = pixel.x;
-            dst[1 * dst_h * dst_w + dy * dst_w + dx] = pixel.y;
-            dst[2 * dst_h * dst_w + dy * dst_w + dx] = pixel.z;
-            break;
-        case nv::COLOR_TYPE_RGB888_PLANAR:
-            dst[2 * dst_h * dst_w + dy * dst_w + dx] = pixel.x;
-            dst[1 * dst_h * dst_w + dy * dst_w + dx] = pixel.y;
-            dst[0 * dst_h * dst_w + dy * dst_w + dx] = pixel.z;
-            break;
-        default:
-            printf("Not support color convert\n");
-            return;
+            case nv::COLOR_TYPE_BGR888_PACKED:
+                dst[dy * dst_w * channels + dx * channels + 0] = pixel.x;
+                dst[dy * dst_w * channels + dx * channels + 1] = pixel.y;
+                dst[dy * dst_w * channels + dx * channels + 2] = pixel.z;
+                break;
+            case nv::COLOR_TYPE_RGB888_PACKED:
+                dst[dy * dst_w * channels + dx * channels + 2] = pixel.x;
+                dst[dy * dst_w * channels + dx * channels + 1] = pixel.y;
+                dst[dy * dst_w * channels + dx * channels + 0] = pixel.z;
+                break;
+            case nv::COLOR_TYPE_BGR888_PLANAR:
+                dst[0 * dst_h * dst_w + dy * dst_w + dx] = pixel.x;
+                dst[1 * dst_h * dst_w + dy * dst_w + dx] = pixel.y;
+                dst[2 * dst_h * dst_w + dy * dst_w + dx] = pixel.z;
+                break;
+            case nv::COLOR_TYPE_RGB888_PLANAR:
+                dst[2 * dst_h * dst_w + dy * dst_w + dx] = pixel.x;
+                dst[1 * dst_h * dst_w + dy * dst_w + dx] = pixel.y;
+                dst[0 * dst_h * dst_w + dy * dst_w + dx] = pixel.z;
+                break;
+            default:
+                printf("Not support color convert\n");
+                return;
         }
     }
 }
 
-__global__ void resize_kernel(const int nbThreads, const unsigned char *src,
-                              int channels, int src_h, int src_w,
-                              nv::ColorType src_color_type, unsigned char *dst,
-                              int dst_h, int dst_w,
+__global__ void resize_kernel(const int nbThreads, const unsigned char *src, int channels, int src_h, int src_w,
+                              nv::ColorType src_color_type, unsigned char *dst, int dst_h, int dst_w,
                               nv::ColorType dst_color_type) {
     CUDA_KERNEL_LOOP(idx, nbThreads) {
         int dx = idx % dst_w;
         int dy = idx / dst_w;
         uchar3 pixel;
-        pixel.x = calcScaleVal2(src, channels, src_h, src_w, dst_h, dst_w, dx,
-                                dy, 0, src_color_type);
-        pixel.y = calcScaleVal2(src, channels, src_h, src_w, dst_h, dst_w, dx,
-                                dy, 1, src_color_type);
-        pixel.z = calcScaleVal2(src, channels, src_h, src_w, dst_h, dst_w, dx,
-                                dy, 2, src_color_type);
+        pixel.x = calcScaleVal2(src, channels, src_h, src_w, dst_h, dst_w, dx, dy, 0, src_color_type);
+        pixel.y = calcScaleVal2(src, channels, src_h, src_w, dst_h, dst_w, dx, dy, 1, src_color_type);
+        pixel.z = calcScaleVal2(src, channels, src_h, src_w, dst_h, dst_w, dx, dy, 2, src_color_type);
 
         switch (dst_color_type) {
-        case nv::COLOR_TYPE_RGB888_PLANAR:
-        case nv::COLOR_TYPE_BGR888_PLANAR:
-            dst[0 * dst_h * dst_w + dy * dst_w + dx] = pixel.x;
-            dst[1 * dst_h * dst_w + dy * dst_w + dx] = pixel.y;
-            dst[2 * dst_h * dst_w + dy * dst_w + dx] = pixel.z;
-            break;
-        case nv::COLOR_TYPE_RGB888_PACKED:
-        case nv::COLOR_TYPE_BGR888_PACKED:
-            dst[dy * dst_w * channels + dx * channels + 0] = pixel.x;
-            dst[dy * dst_w * channels + dx * channels + 1] = pixel.y;
-            dst[dy * dst_w * channels + dx * channels + 2] = pixel.z;
-            break;
-        default:
-            printf("Not support color convert\n");
-            break;
+            case nv::COLOR_TYPE_RGB888_PLANAR:
+            case nv::COLOR_TYPE_BGR888_PLANAR:
+                dst[0 * dst_h * dst_w + dy * dst_w + dx] = pixel.x;
+                dst[1 * dst_h * dst_w + dy * dst_w + dx] = pixel.y;
+                dst[2 * dst_h * dst_w + dy * dst_w + dx] = pixel.z;
+                break;
+            case nv::COLOR_TYPE_RGB888_PACKED:
+            case nv::COLOR_TYPE_BGR888_PACKED:
+                dst[dy * dst_w * channels + dx * channels + 0] = pixel.x;
+                dst[dy * dst_w * channels + dx * channels + 1] = pixel.y;
+                dst[dy * dst_w * channels + dx * channels + 2] = pixel.z;
+                break;
+            default:
+                printf("Not support color convert\n");
+                break;
         }
     }
 }
 
-int resizePaddingCvtColorNormAsync(cudaStream_t stream, const nv::Image &src,
-                                   nv::Image &dst, float *mean_vals,
-                                   float *std_vals, PaddingMode padding_mode,
-                                   float *padding_values) {
-    LOG_ASSERT(dst.dataType == nv::DataType::DATA_TYPE_FLOAT32 &&
-               src.dataType == nv::DataType::DATA_TYPE_UINT8);
+int resizePaddingCvtColorNormAsync(cudaStream_t stream, const nv::Image &src, nv::Image &dst, float *mean_vals,
+                                   float *std_vals, PaddingMode padding_mode, float *padding_values) {
+    LOG_ASSERT(dst.dataType == nv::DataType::DATA_TYPE_FLOAT32 && src.dataType == nv::DataType::DATA_TYPE_UINT8);
     int target_h = 0, target_w = 0;
     int start_x = 0, start_y = 0;
-    if (0 != getResizeParam(src, dst, padding_mode, target_h, target_w, start_y,
-                            start_x)) {
+    if (0 != getResizeParam(src, dst, padding_mode, target_h, target_w, start_y, start_x)) {
         LOG_ERROR("getResizeParam failed");
         return -1;
     }
     float3 _mean_vals = make_float3(mean_vals[0], mean_vals[1], mean_vals[2]);
     float3 _std_vals = make_float3(std_vals[0], std_vals[1], std_vals[2]);
-    float3 _padding_values =
-        make_float3(padding_values[0], padding_values[1], padding_values[2]);
+    float3 _padding_values = make_float3(padding_values[0], padding_values[1], padding_values[2]);
     const int nbThreads = dst.h() * dst.w();
-    resizePaddingCvtColorNorm_kernel<<<CUDA_GET_BLOCKS(nbThreads),
-                                       CUDA_NUM_THREADS, 0, stream>>>(
-        nbThreads, (unsigned char *)(src.gpu_data), src.channels(), src.h(),
-        src.w(), src.colorType, (float *)(dst.gpu_data), dst.h(), dst.w(),
-        dst.colorType, target_h, target_w, start_y, start_x, _mean_vals,
+    resizePaddingCvtColorNorm_kernel<<<CUDA_GET_BLOCKS(nbThreads), CUDA_NUM_THREADS, 0, stream>>>(
+        nbThreads, (unsigned char *)(src.gpu_data), src.channels(), src.h(), src.w(), src.colorType,
+        (float *)(dst.gpu_data), dst.h(), dst.w(), dst.colorType, target_h, target_w, start_y, start_x, _mean_vals,
         _std_vals, _padding_values);
     CUDACHECK(cudaStreamSynchronize(stream));
     CUDACHECK(cudaGetLastError());
     return 0;
 }
 
-int resizePaddingCvtColorNorm(const nv::Image &src, nv::Image &dst,
-                              float *mean_vals, float *std_vals,
+int resizePaddingCvtColorNorm(const nv::Image &src, nv::Image &dst, float *mean_vals, float *std_vals,
                               PaddingMode padding_mode, float *padding_values) {
-    LOG_ASSERT(dst.dataType == nv::DataType::DATA_TYPE_FLOAT32 &&
-               src.dataType == nv::DataType::DATA_TYPE_UINT8);
+    LOG_ASSERT(dst.dataType == nv::DataType::DATA_TYPE_FLOAT32 && src.dataType == nv::DataType::DATA_TYPE_UINT8);
     int target_h = 0, target_w = 0;
     int start_x = 0, start_y = 0;
-    if (0 != getResizeParam(src, dst, padding_mode, target_h, target_w, start_y,
-                            start_x)) {
+    if (0 != getResizeParam(src, dst, padding_mode, target_h, target_w, start_y, start_x)) {
         LOG_ERROR("getResizeParam failed");
         return -1;
     }
     float3 _mean_vals = make_float3(mean_vals[0], mean_vals[1], mean_vals[2]);
     float3 _std_vals = make_float3(std_vals[0], std_vals[1], std_vals[2]);
-    float3 _padding_values =
-        make_float3(padding_values[0], padding_values[1], padding_values[2]);
+    float3 _padding_values = make_float3(padding_values[0], padding_values[1], padding_values[2]);
     const int nbThreads = dst.h() * dst.w();
-    resizePaddingCvtColorNorm_kernel<<<CUDA_GET_BLOCKS(nbThreads),
-                                       CUDA_NUM_THREADS>>>(
-        nbThreads, (unsigned char *)(src.gpu_data), src.channels(), src.h(),
-        src.w(), src.colorType, (float *)(dst.gpu_data), dst.h(), dst.w(),
-        dst.colorType, target_h, target_w, start_y, start_x, _mean_vals,
+    resizePaddingCvtColorNorm_kernel<<<CUDA_GET_BLOCKS(nbThreads), CUDA_NUM_THREADS>>>(
+        nbThreads, (unsigned char *)(src.gpu_data), src.channels(), src.h(), src.w(), src.colorType,
+        (float *)(dst.gpu_data), dst.h(), dst.w(), dst.colorType, target_h, target_w, start_y, start_x, _mean_vals,
         _std_vals, _padding_values);
     CUDACHECK(cudaDeviceSynchronize());
     CUDACHECK(cudaGetLastError());
     return 0;
 }
 
-int resizePaddingCvtColorAsync(cudaStream_t stream, const nv::Image &src,
-                               nv::Image &dst, PaddingMode padding_mode,
+int resizePaddingCvtColorAsync(cudaStream_t stream, const nv::Image &src, nv::Image &dst, PaddingMode padding_mode,
                                float *padding_values) {
-    LOG_ASSERT(dst.dataType == nv::DataType::DATA_TYPE_UINT8 &&
-               src.dataType == nv::DataType::DATA_TYPE_UINT8);
+    LOG_ASSERT(dst.dataType == nv::DataType::DATA_TYPE_UINT8 && src.dataType == nv::DataType::DATA_TYPE_UINT8);
     int target_h = 0, target_w = 0;
     int start_x = 0, start_y = 0;
-    if (0 != getResizeParam(src, dst, padding_mode, target_h, target_w, start_y,
-                            start_x)) {
+    if (0 != getResizeParam(src, dst, padding_mode, target_h, target_w, start_y, start_x)) {
         LOG_ERROR("getResizeParam failed");
         return -1;
     }
-    float3 _padding_values =
-        make_float3(padding_values[0], padding_values[1], padding_values[2]);
+    float3 _padding_values = make_float3(padding_values[0], padding_values[1], padding_values[2]);
     const int nbThreads = dst.h() * dst.h();
-    resizePaddingCvtColor_kernel<<<CUDA_GET_BLOCKS(nbThreads), CUDA_NUM_THREADS,
-                                   0, stream>>>(
-        nbThreads, (unsigned char *)(src.gpu_data), src.channels(), src.h(),
-        src.w(), src.colorType, (unsigned char *)(dst.gpu_data), dst.h(),
-        dst.w(), dst.colorType, target_h, target_w, start_y, start_x,
+    resizePaddingCvtColor_kernel<<<CUDA_GET_BLOCKS(nbThreads), CUDA_NUM_THREADS, 0, stream>>>(
+        nbThreads, (unsigned char *)(src.gpu_data), src.channels(), src.h(), src.w(), src.colorType,
+        (unsigned char *)(dst.gpu_data), dst.h(), dst.w(), dst.colorType, target_h, target_w, start_y, start_x,
         _padding_values);
     CUDACHECK(cudaStreamSynchronize(stream));
     CUDACHECK(cudaGetLastError());
     return 0;
 }
 
-int resizePaddingCvtColor(const nv::Image &src, nv::Image &dst,
-                          PaddingMode padding_mode, float *padding_values) {
-    LOG_ASSERT(dst.dataType == nv::DataType::DATA_TYPE_UINT8 &&
-               src.dataType == nv::DataType::DATA_TYPE_UINT8);
+int resizePaddingCvtColor(const nv::Image &src, nv::Image &dst, PaddingMode padding_mode, float *padding_values) {
+    LOG_ASSERT(dst.dataType == nv::DataType::DATA_TYPE_UINT8 && src.dataType == nv::DataType::DATA_TYPE_UINT8);
     int target_h = 0, target_w = 0;
     int start_x = 0, start_y = 0;
-    if (0 != getResizeParam(src, dst, padding_mode, target_h, target_w, start_y,
-                            start_x)) {
+    if (0 != getResizeParam(src, dst, padding_mode, target_h, target_w, start_y, start_x)) {
         LOG_ERROR("getResizeParam failed");
         return -1;
     }
-    float3 _padding_values =
-        make_float3(padding_values[0], padding_values[1], padding_values[2]);
+    float3 _padding_values = make_float3(padding_values[0], padding_values[1], padding_values[2]);
     const int nbThreads = dst.h() * dst.h();
-    resizePaddingCvtColor_kernel<<<CUDA_GET_BLOCKS(nbThreads),
-                                   CUDA_NUM_THREADS>>>(
-        nbThreads, (unsigned char *)(src.gpu_data), src.channels(), src.h(),
-        src.w(), src.colorType, (unsigned char *)(dst.gpu_data), dst.h(),
-        dst.w(), dst.colorType, target_h, target_w, start_y, start_x,
+    resizePaddingCvtColor_kernel<<<CUDA_GET_BLOCKS(nbThreads), CUDA_NUM_THREADS>>>(
+        nbThreads, (unsigned char *)(src.gpu_data), src.channels(), src.h(), src.w(), src.colorType,
+        (unsigned char *)(dst.gpu_data), dst.h(), dst.w(), dst.colorType, target_h, target_w, start_y, start_x,
         _padding_values);
     CUDACHECK(cudaDeviceSynchronize());
     CUDACHECK(cudaGetLastError());
@@ -446,14 +390,12 @@ int resizePaddingCvtColor(const nv::Image &src, nv::Image &dst,
 
 int resize(const nv::Image &src, nv::Image &dst) {
     LOG_ASSERT(src.gpu_data && dst.gpu_data);
-    LOG_ASSERT(dst.dataType == nv::DataType::DATA_TYPE_UINT8 &&
-               src.dataType == nv::DataType::DATA_TYPE_UINT8);
+    LOG_ASSERT(dst.dataType == nv::DataType::DATA_TYPE_UINT8 && src.dataType == nv::DataType::DATA_TYPE_UINT8);
     LOG_ASSERT(src.colorType == dst.colorType);
     const int nbThreads = dst.w() * dst.h();
     resize_kernel<<<CUDA_GET_BLOCKS(nbThreads), CUDA_NUM_THREADS>>>(
-        nbThreads, (unsigned char *)(src.gpu_data), src.channels(), src.h(),
-        src.w(), src.colorType, (unsigned char *)(dst.gpu_data), dst.h(),
-        dst.w(), dst.colorType);
+        nbThreads, (unsigned char *)(src.gpu_data), src.channels(), src.h(), src.w(), src.colorType,
+        (unsigned char *)(dst.gpu_data), dst.h(), dst.w(), dst.colorType);
     CUDACHECK(cudaDeviceSynchronize());
     CUDACHECK(cudaGetLastError());
     return 0;

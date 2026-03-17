@@ -3,35 +3,30 @@
  * @Date: 2024-10-12 09:59:37
  * @LastEditTime: 2024-10-12 10:33:44
  * @FilePath: /dmnn2/src/plugin/common/kernels/detectionForwardV2.cu
- * @Description: 
- * 
- * Copyright (c) 2024 by Chinasvt, All Rights Reserved. 
+ * @Description:
+ *
+ * Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
-#include "kernel.h"
 #include "../bboxUtils.h"
-#include "error_check.h"
 #include "base_types.h"
+#include "error_check.h"
+#include "kernel.h"
 
-__global__ void decode_pts_kernel(
-        const int nbThreads,
-        const bool varianceEncodedInTarget,
-        const int numPriors,
-        const int numPts,
-        const bool clipBBox,
-        const float* landData,    // [batch_size, numPriors*numPts*2, 1, 1]
-        const float* priorData,   // [batch_size, 2, numPriors*4, 1]
-        float* ptsData)           // [batch_size, numPriors*numPts*2, 1, 1]
+__global__ void decode_pts_kernel(const int nbThreads, const bool varianceEncodedInTarget, const int numPriors,
+                                  const int numPts, const bool clipBBox,
+                                  const float* landData,   // [batch_size, numPriors*numPts*2, 1, 1]
+                                  const float* priorData,  // [batch_size, 2, numPriors*4, 1]
+                                  float* ptsData)          // [batch_size, numPriors*numPts*2, 1, 1]
 {
-    CUDA_KERNEL_LOOP(idx, nbThreads)
-    {
-        int dn = idx / numPriors;   // 图片索引
-        int dp = idx % numPriors;   // 先验框索引
+    CUDA_KERNEL_LOOP(idx, nbThreads) {
+        int dn = idx / numPriors;  // 图片索引
+        int dp = idx % numPriors;  // 先验框索引
 
         // Get prior box coordinates
-        const float x1 = priorData[dp*4 + 0];
-        const float y1 = priorData[dp*4 + 1];
-        const float x2 = priorData[dp*4 + 2];
-        const float y2 = priorData[dp*4 + 3];
+        const float x1 = priorData[dp * 4 + 0];
+        const float y1 = priorData[dp * 4 + 1];
+        const float x2 = priorData[dp * 4 + 2];
+        const float y2 = priorData[dp * 4 + 3];
 
         // Calculate prior box center, height, and width
         const float cx = (x1 + x2) * 0.5f;
@@ -39,56 +34,36 @@ __global__ void decode_pts_kernel(
         const float w = x2 - x1;
         const float h = y2 - y1;
 
-        for (int i=0; i<numPts; i++)
-        {
-            if (varianceEncodedInTarget)
-            {
-
+        for (int i = 0; i < numPts; i++) {
+            if (varianceEncodedInTarget) {
+            } else {
+                ptsData[dn * numPriors * numPts * 2 + dp * numPts * 2 + i * 2 + 0] =
+                    cx +
+                    landData[dn * numPriors * numPts * 2 + dp * numPts * 2 + i * 2 + 0] * priorData[numPriors * 4] * w;
+                ptsData[dn * numPriors * numPts * 2 + dp * numPts * 2 + i * 2 + 1] =
+                    cy +
+                    landData[dn * numPriors * numPts * 2 + dp * numPts * 2 + i * 2 + 1] * priorData[numPriors * 4] * h;
             }
-            else
-            {
-                ptsData[dn*numPriors*numPts*2 + dp*numPts*2 + i*2 + 0] = cx + landData[dn*numPriors*numPts*2 + dp*numPts*2 + i*2 + 0] * priorData[numPriors*4] * w;
-                ptsData[dn*numPriors*numPts*2 + dp*numPts*2 + i*2 + 1] = cy + landData[dn*numPriors*numPts*2 + dp*numPts*2 + i*2 + 1] * priorData[numPriors*4] * h;
-            }
 
-            if (clipBBox)
-            {
-                ptsData[dn*numPriors*numPts*2 + dp*numPts*2 + i*2 + 0] = max(min(ptsData[dn*numPriors*numPts*2 + dp*numPts*2 + i*2 + 0], 1.0f), 0.0f);
-                ptsData[dn*numPriors*numPts*2 + dp*numPts*2 + i*2 + 1] = max(min(ptsData[dn*numPriors*numPts*2 + dp*numPts*2 + i*2 + 1], 1.0f), 0.0f);
+            if (clipBBox) {
+                ptsData[dn * numPriors * numPts * 2 + dp * numPts * 2 + i * 2 + 0] =
+                    max(min(ptsData[dn * numPriors * numPts * 2 + dp * numPts * 2 + i * 2 + 0], 1.0f), 0.0f);
+                ptsData[dn * numPriors * numPts * 2 + dp * numPts * 2 + i * 2 + 1] =
+                    max(min(ptsData[dn * numPriors * numPts * 2 + dp * numPts * 2 + i * 2 + 1], 1.0f), 0.0f);
             }
         }
     }
 }
 
-pluginStatus_t detectionInferenceV2(
-        cudaStream_t stream,
-        const int N,
-        const int C1,
-        const int C2,
-        const int C3,
-        const bool shareLocation,
-        const bool varianceEncodedInTarget,
-        const int backgroundLabelId,
-        const int numPredsPerClass,
-        const int numClasses,
-        const int numPts,
-        const int topK,
-        const int keepTopK,
-        const float confidenceThreshold,
-        const float nmsThreshold,
-        const CodeTypeSSD codeType,
-        const DataType DT_BBOX,
-        const void *locData,
-        const void *priorData,
-        const void *landData,
-        const DataType DT_SCORE,
-        const void *confData,
-        void *keepCount,
-        void *topDetections,
-        void *workspace,
-        bool isNormalized,
-        bool confSigmoid)
-{
+pluginStatus_t detectionInferenceV2(cudaStream_t stream, const int N, const int C1, const int C2, const int C3,
+                                    const bool shareLocation, const bool varianceEncodedInTarget,
+                                    const int backgroundLabelId, const int numPredsPerClass, const int numClasses,
+                                    const int numPts, const int topK, const int keepTopK,
+                                    const float confidenceThreshold, const float nmsThreshold,
+                                    const CodeTypeSSD codeType, const DataType DT_BBOX, const void* locData,
+                                    const void* priorData, const void* landData, const DataType DT_SCORE,
+                                    const void* confData, void* keepCount, void* topDetections, void* workspace,
+                                    bool isNormalized, bool confSigmoid) {
     const int locCount = N * C1;
     // Do not clip the bounding box that goes outside the image
     const bool clipBBox = false;
@@ -96,26 +71,17 @@ pluginStatus_t detectionInferenceV2(
      * shareLocation
      * Bounding box are shared among all classes, i.e., a bounding box could be classified as any candidate class.
      * Otherwise
-     * Bounding box are designed for specific classes, i.e., a bounding box could be classified as one certain class or not (binary classification).
+     * Bounding box are designed for specific classes, i.e., a bounding box could be classified as one certain class or
+     * not (binary classification).
      */
     const int numLocClasses = shareLocation ? 1 : numClasses;
 
     size_t bboxDataSize = detectionForwardBBoxDataSize(N, C1, DataType::kFLOAT);
     void* bboxDataRaw = workspace;
 
-    pluginStatus_t status = decodeBBoxes(stream,
-                                         locCount,
-                                         codeType,
-                                         varianceEncodedInTarget,
-                                         numPredsPerClass,
-                                         shareLocation,
-                                         numLocClasses,
-                                         backgroundLabelId,
-                                         clipBBox,
-                                         DataType::kFLOAT,
-                                         locData,
-                                         priorData,
-                                         bboxDataRaw);
+    pluginStatus_t status =
+        decodeBBoxes(stream, locCount, codeType, varianceEncodedInTarget, numPredsPerClass, shareLocation,
+                     numLocClasses, backgroundLabelId, clipBBox, DataType::kFLOAT, locData, priorData, bboxDataRaw);
     if (STATUS_SUCCESS != status) {
         LOG_ERROR("Failed to decodeBBoxes");
         return status;
@@ -128,23 +94,15 @@ pluginStatus_t detectionInferenceV2(
     // float for now
     void* bboxData;
     size_t bboxPermuteSize = detectionForwardBBoxPermuteSize(shareLocation, N, C1, DataType::kFLOAT);
-    void* bboxPermute = nextWorkspacePtr((int8_t*) bboxDataRaw, bboxDataSize);
+    void* bboxPermute = nextWorkspacePtr((int8_t*)bboxDataRaw, bboxDataSize);
 
     /**
      * After permutation, bboxData format:
      * [batch_size, numLocClasses, numPriors (per sample) (numPredsPerClass), 4]
      * This is equivalent to swapping axis
      */
-    if (!shareLocation)
-    {
-        status = permuteData(stream,
-                             locCount,
-                             numLocClasses,
-                             numPredsPerClass,
-                             4,
-                             DataType::kFLOAT,
-                             false,
-                             bboxDataRaw,
+    if (!shareLocation) {
+        status = permuteData(stream, locCount, numLocClasses, numPredsPerClass, 4, DataType::kFLOAT, false, bboxDataRaw,
                              bboxPermute);
         if (STATUS_SUCCESS != status) {
             LOG_ERROR("Failed to permuteData");
@@ -156,8 +114,7 @@ pluginStatus_t detectionInferenceV2(
      * If shareLocation, numLocClasses = 1
      * No need to permute data on linear memory
      */
-    else
-    {
+    else {
         bboxData = bboxDataRaw;
     }
 
@@ -165,12 +122,13 @@ pluginStatus_t detectionInferenceV2(
      * pts data format
      * [batch_size, numPriors*numPts*2, 1, 1]
      */
-    //const int ptsCount = N * C3;
+    // const int ptsCount = N * C3;
     const int nbThreads = N * numPredsPerClass;
     size_t ptsDataSize = detectionForwardPtsDataSize(N, C3, DataType::kFLOAT);
-    void* ptsData = nextWorkspacePtr((int8_t *)bboxPermute, bboxPermuteSize);
-    decode_pts_kernel<< < CUDA_GET_BLOCKS(nbThreads), CUDA_NUM_THREADS, 0, stream>> >
-                (nbThreads, varianceEncodedInTarget, numPredsPerClass, numPts, clipBBox, (float*)landData, (float*)priorData, (float*)ptsData);
+    void* ptsData = nextWorkspacePtr((int8_t*)bboxPermute, bboxPermuteSize);
+    decode_pts_kernel<<<CUDA_GET_BLOCKS(nbThreads), CUDA_NUM_THREADS, 0, stream>>>(
+        nbThreads, varianceEncodedInTarget, numPredsPerClass, numPts, clipBBox, (float*)landData, (float*)priorData,
+        (float*)ptsData);
 
     /*
     pluginStatus_t status_pts = decodePts(stream,
@@ -211,13 +169,13 @@ pluginStatus_t detectionInferenceV2(
     */
 
     // 验证每个batch是否一致
-    //float* dst{nullptr};
-    //int count = N*C3;
-    //int step = C3;
-    //float* src = reinterpret_cast<float*>(ptsData);
-    //CUDACHECK(cudaMallocHost((void**)&dst, count*sizeof(float)));
-    //CUDACHECK(cudaMemcpy(dst, src, count*sizeof(float), cudaMemcpyDeviceToHost));
-    //for (int i=1; i<count; i+=step)
+    // float* dst{nullptr};
+    // int count = N*C3;
+    // int step = C3;
+    // float* src = reinterpret_cast<float*>(ptsData);
+    // CUDACHECK(cudaMallocHost((void**)&dst, count*sizeof(float)));
+    // CUDACHECK(cudaMemcpy(dst, src, count*sizeof(float), cudaMemcpyDeviceToHost));
+    // for (int i=1; i<count; i+=step)
     //    printf("%f\n", dst[i]);
 
     /**
@@ -233,14 +191,7 @@ pluginStatus_t detectionInferenceV2(
      * After permutation, bboxData format:
      * [batch_size, numClasses, numPredsPerClass, 1]
      */
-    status = permuteData(stream,
-                         numScores,
-                         numClasses,
-                         numPredsPerClass,
-                         1,
-                         DataType::kFLOAT,
-                         confSigmoid,
-                         confData,
+    status = permuteData(stream, numScores, numClasses, numPredsPerClass, 1, DataType::kFLOAT, confSigmoid, confData,
                          scores);
     if (STATUS_SUCCESS != status) {
         LOG_ERROR("Failed to permuteData");
@@ -258,71 +209,30 @@ pluginStatus_t detectionInferenceV2(
 
     void* sortingWorkspace = nextWorkspacePtr((int8_t*)postNMSIndices, postNMSIndicesSize);
 
-    status = sortScoresPerClass(stream,
-                                N,
-                                numClasses,
-                                numPredsPerClass,
-                                backgroundLabelId,
-                                confidenceThreshold,
-                                DataType::kFLOAT,
-                                scores,
-                                indices,
-                                sortingWorkspace);
+    status = sortScoresPerClass(stream, N, numClasses, numPredsPerClass, backgroundLabelId, confidenceThreshold,
+                                DataType::kFLOAT, scores, indices, sortingWorkspace);
     if (STATUS_SUCCESS != status) {
         LOG_ERROR("Failed to sortScoresPerClass");
         return status;
     }
 
-    status = allClassNMS(stream,
-                           N,
-                           numClasses,
-                           numPredsPerClass,
-                           topK,
-                           nmsThreshold,
-                           shareLocation,
-                           isNormalized,
-                           DataType::kFLOAT,
-                           DataType::kFLOAT,
-                           bboxData,
-                           scores,
-                           indices,
-                           postNMSScores,
-                           postNMSIndices,
-                           false);
+    status = allClassNMS(stream, N, numClasses, numPredsPerClass, topK, nmsThreshold, shareLocation, isNormalized,
+                         DataType::kFLOAT, DataType::kFLOAT, bboxData, scores, indices, postNMSScores, postNMSIndices,
+                         false);
     if (STATUS_SUCCESS != status) {
         LOG_ERROR("Failed to allClassNMS");
         return status;
     }
 
-    status = sortScoresPerImage(stream,
-                                N,
-                                numClasses * topK,
-                                DataType::kFLOAT,
-                                postNMSScores,
-                                postNMSIndices,
-                                scores,
-                                indices,
-                                sortingWorkspace);
+    status = sortScoresPerImage(stream, N, numClasses * topK, DataType::kFLOAT, postNMSScores, postNMSIndices, scores,
+                                indices, sortingWorkspace);
     if (STATUS_SUCCESS != status) {
         LOG_ERROR("Failed to sortScoresPerImage");
         return status;
     }
 
-    status = gatherTopDetectionsV2(stream,
-                                   shareLocation,
-                                   N,
-                                   numPredsPerClass,
-                                   numClasses,
-                                   numPts,
-                                   topK,
-                                   keepTopK,
-                                   DataType::kFLOAT,
-                                   DataType::kFLOAT,
-                                   indices,
-                                   scores,
-                                   bboxData,
-                                   ptsData,
-                                   keepCount,
+    status = gatherTopDetectionsV2(stream, shareLocation, N, numPredsPerClass, numClasses, numPts, topK, keepTopK,
+                                   DataType::kFLOAT, DataType::kFLOAT, indices, scores, bboxData, ptsData, keepCount,
                                    topDetections);
     if (STATUS_SUCCESS != status) {
         LOG_ERROR("Failed to gatherTopDetectionsV2");

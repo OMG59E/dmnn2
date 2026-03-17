@@ -8,9 +8,10 @@
  * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
 #pragma once
-#include "base_types.h"
 #include <NvInfer.h>
 #include <NvInferVersion.h>
+
+#include "base_types.h"
 
 #define MAX_INPUT_OUTPUT 128
 
@@ -22,15 +23,26 @@ public:
     virtual int load(const std::string &model_file, int device_id);
     virtual int inference(int batch_size = -1);
     virtual int unload();
-    virtual std::string getInputName(int idx) { return inputs_[idx].name; }
-    virtual std::string getOutputName(int idx) { return outputs_[idx].name; }
-    virtual int getNbOutputs() const { return outputs_.size(); }
-    virtual int getNbInputs() const { return inputs_.size(); }
-    virtual std::vector<nv::Tensor> &getInputs() { return inputs_; }
-    virtual std::vector<nv::Tensor> &getOutputs() { return outputs_; }
+    virtual std::string getInputName(int idx) {
+        return inputs_[idx].name;
+    }
+    virtual std::string getOutputName(int idx) {
+        return outputs_[idx].name;
+    }
+    virtual int getNbOutputs() const {
+        return outputs_.size();
+    }
+    virtual int getNbInputs() const {
+        return inputs_.size();
+    }
+    virtual std::vector<nv::Tensor> &getInputs() {
+        return inputs_;
+    }
+    virtual std::vector<nv::Tensor> &getOutputs() {
+        return outputs_;
+    }
     virtual void printLayerTimes(int iterations);
-    virtual void printInputOutputInfo(const std::vector<nv::Tensor> &tensors,
-                                      const std::string &prefix) const;
+    virtual void printInputOutputInfo(const std::vector<nv::Tensor> &tensors, const std::string &prefix) const;
 
 public:
     int valid_batch_size_;

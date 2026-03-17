@@ -12,10 +12,8 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parseEltwise(INetworkDefinition &network,
-                     const trtcaffe::LayerParameter &msg,
-                     CaffeWeightFactory & /*weightFactory*/,
-                     BlobNameToTensor &tensors) {
+ILayer *parseEltwise(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                     CaffeWeightFactory & /*weightFactory*/, BlobNameToTensor &tensors) {
     if (!checkBlobs(msg, 2, 1))
         return nullptr;
 
@@ -23,18 +21,17 @@ ILayer *parseEltwise(INetworkDefinition &network,
 
     ElementWiseOperation op = ElementWiseOperation::kSUM;
     switch (p.operation()) {
-    case trtcaffe::EltwiseParameter_EltwiseOp_SUM:
-        op = ElementWiseOperation::kSUM;
-        break;
-    case trtcaffe::EltwiseParameter_EltwiseOp_PROD:
-        op = ElementWiseOperation::kPROD;
-        break;
-    case trtcaffe::EltwiseParameter_EltwiseOp_MAX:
-        op = ElementWiseOperation::kMAX;
-        break;
+        case trtcaffe::EltwiseParameter_EltwiseOp_SUM:
+            op = ElementWiseOperation::kSUM;
+            break;
+        case trtcaffe::EltwiseParameter_EltwiseOp_PROD:
+            op = ElementWiseOperation::kPROD;
+            break;
+        case trtcaffe::EltwiseParameter_EltwiseOp_MAX:
+            op = ElementWiseOperation::kMAX;
+            break;
     }
 
-    return network.addElementWise(*tensors[msg.bottom(0)],
-                                  *tensors[msg.bottom(1)], op);
+    return network.addElementWise(*tensors[msg.bottom(0)], *tensors[msg.bottom(1)], op);
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

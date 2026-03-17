@@ -8,10 +8,10 @@
  * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
 #include "onnx_utils.hpp"
+
 #include "logging.h"
 
 bool ParseFromFile_WAR(google::protobuf::Message *msg, const char *filename) {
-
     std::ifstream stream(filename, std::ios::in | std::ios::binary);
     if (!stream) {
         LOG_ERROR("Could not open file: {}", std::string(filename));
@@ -24,8 +24,7 @@ bool ParseFromFile_WAR(google::protobuf::Message *msg, const char *filename) {
     coded_input.SetTotalBytesLimit(std::numeric_limits<int>::max());
 #else
     // Note: This WARs the very low default size limit (64MB)
-    coded_input.SetTotalBytesLimit(std::numeric_limits<int>::max(),
-                                   std::numeric_limits<int>::max() / 4);
+    coded_input.SetTotalBytesLimit(std::numeric_limits<int>::max(), std::numeric_limits<int>::max() / 4);
 #endif
     return msg->ParseFromCodedStream(&coded_input);
 }

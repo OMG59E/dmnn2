@@ -12,12 +12,10 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parseAbsVal(INetworkDefinition &network,
-                    const trtcaffe::LayerParameter &msg,
-                    CaffeWeightFactory & /* weightFactory */,
-                    BlobNameToTensor &tensors) {
+ILayer *parseAbsVal(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                    CaffeWeightFactory & /* weightFactory */, BlobNameToTensor &tensors) {
     if (!checkBlobs(msg, 1, 1))
         return nullptr;
     return network.addUnary(*tensors[msg.bottom(0)], UnaryOperation::kABS);
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

@@ -19,14 +19,14 @@
 #define TRT_EFFICIENT_NMS_INFERENCE_H
 
 #include "../common/plugin.h"
-
 #include "efficientNMSParameters.h"
 
-size_t EfficientNMSWorkspaceSize(
-    int32_t batchSize, int32_t numScoreElements, int32_t numClasses, nvinfer1::DataType datatype);
+size_t EfficientNMSWorkspaceSize(int32_t batchSize, int32_t numScoreElements, int32_t numClasses,
+                                 nvinfer1::DataType datatype);
 
 pluginStatus_t EfficientNMSInference(nvinfer1::plugin::EfficientNMSParameters param, void const* boxesInput,
-    void const* scoresInput, void const* anchorsInput, void* numDetectionsOutput, void* nmsBoxesOutput,
-    void* nmsScoresOutput, void* nmsClassesOutput, void* nmsIndicesOutput, void* workspace, cudaStream_t stream);
+                                     void const* scoresInput, void const* anchorsInput, void* numDetectionsOutput,
+                                     void* nmsBoxesOutput, void* nmsScoresOutput, void* nmsClassesOutput,
+                                     void* nmsIndicesOutput, void* workspace, cudaStream_t stream);
 
 #endif

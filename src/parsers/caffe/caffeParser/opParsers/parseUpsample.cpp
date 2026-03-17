@@ -12,17 +12,14 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parseUpsample(INetworkDefinition &network,
-                      const trtcaffe::LayerParameter &msg,
-                      CaffeWeightFactory & /*weightFactory*/,
-                      BlobNameToTensor &tensors) {
+ILayer *parseUpsample(INetworkDefinition &network, const trtcaffe::LayerParameter &msg,
+                      CaffeWeightFactory & /*weightFactory*/, BlobNameToTensor &tensors) {
     if (!checkBlobs(msg, 1, 1))
         return nullptr;
 
     const trtcaffe::UpsampleParameter &p = msg.upsample_param();
 
-    nv::DimsCHW dims =
-        parserutils::getCHW(tensors[msg.bottom(0)]->getDimensions());
+    nv::DimsCHW dims = parserutils::getCHW(tensors[msg.bottom(0)]->getDimensions());
     int in_h = dims.h();
     int in_w = dims.w();
 
@@ -35,4 +32,4 @@ ILayer *parseUpsample(INetworkDefinition &network,
     layer->setOutputDimensions(Dims3{dims.c(), out_h, out_w});
     return layer;
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

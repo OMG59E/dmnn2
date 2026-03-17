@@ -8,10 +8,12 @@
  * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
 #include "ShapedWeights.hpp"
-#include "onnx2trt_utils.hpp"
-#include "trt_utils.hpp"
+
 #include <cstdint>
 #include <cstring>
+
+#include "onnx2trt_utils.hpp"
+#include "trt_utils.hpp"
 
 namespace onnx2trt {
 
@@ -28,8 +30,7 @@ ShapedWeights ShapedWeights::empty(DataType type) {
     return ShapedWeights(type, nullptr, nvinfer1::Dims{1, {0}});
 }
 
-ShapedWeights::ShapedWeights(DataType type_, void *values_,
-                             nvinfer1::Dims shape_)
+ShapedWeights::ShapedWeights(DataType type_, void *values_, nvinfer1::Dims shape_)
     : type(type_), values(values_), shape(shape_) {
     // Note: this->shape.type[] is not used
 }
@@ -38,7 +39,9 @@ size_t ShapedWeights::size_bytes() const {
     return this->count() * getDtypeSize(this->type);
 }
 
-ShapedWeights::operator bool() const { return (bool)this->values; }
+ShapedWeights::operator bool() const {
+    return (bool)this->values;
+}
 
 ShapedWeights::operator nvinfer1::Weights() const {
     nvinfer1::Weights w{};
@@ -50,8 +53,12 @@ ShapedWeights::operator nvinfer1::Weights() const {
     return w;
 }
 
-const char *ShapedWeights::getName() const { return this->name; }
+const char *ShapedWeights::getName() const {
+    return this->name;
+}
 
-void ShapedWeights::setName(const char *n) { this->name = n; }
+void ShapedWeights::setName(const char *n) {
+    this->name = n;
+}
 
 }  // namespace onnx2trt

@@ -4,7 +4,7 @@
 #pragma once
 
 #ifndef SPDLOG_HEADER_ONLY
-    #include <spdlog/details/backtracer.h>
+#include <spdlog/details/backtracer.h>
 #endif
 namespace spdlog {
 namespace details {
@@ -38,7 +38,9 @@ SPDLOG_INLINE void backtracer::disable() {
     enabled_.store(false, std::memory_order_relaxed);
 }
 
-SPDLOG_INLINE bool backtracer::enabled() const { return enabled_.load(std::memory_order_relaxed); }
+SPDLOG_INLINE bool backtracer::enabled() const {
+    return enabled_.load(std::memory_order_relaxed);
+}
 
 SPDLOG_INLINE void backtracer::push_back(const log_msg &msg) {
     std::lock_guard<std::mutex> lock{mutex_};

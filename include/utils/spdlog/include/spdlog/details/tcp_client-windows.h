@@ -7,13 +7,13 @@
 // tcp client helper
 #include <spdlog/common.h>
 #include <spdlog/details/os.h>
-
 #include <stdio.h>
 #include <stdlib.h>
-#include <string>
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+
+#include <string>
 
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "Mswsock.lib")
@@ -34,29 +34,34 @@ class tcp_client {
 
     static void throw_winsock_error_(const std::string &msg, int last_error) {
         char buf[512];
-        ::FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
-                         last_error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buf,
-                         (sizeof(buf) / sizeof(char)), NULL);
+        ::FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, last_error,
+                         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), buf, (sizeof(buf) / sizeof(char)), NULL);
 
         throw_spdlog_ex(fmt_lib::format("tcp_sink - {}: {}", msg, buf));
     }
 
 public:
-    tcp_client() { init_winsock_(); }
+    tcp_client() {
+        init_winsock_();
+    }
 
     ~tcp_client() {
         close();
         ::WSACleanup();
     }
 
-    bool is_connected() const { return socket_ != INVALID_SOCKET; }
+    bool is_connected() const {
+        return socket_ != INVALID_SOCKET;
+    }
 
     void close() {
         ::closesocket(socket_);
         socket_ = INVALID_SOCKET;
     }
 
-    SOCKET fd() const { return socket_; }
+    SOCKET fd() const {
+        return socket_;
+    }
 
     // try to connect or throw on failure
     void connect(const std::string &host, int port) {
@@ -105,8 +110,7 @@ public:
 
         // set TCP_NODELAY
         int enable_flag = 1;
-        ::setsockopt(socket_, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char *>(&enable_flag),
-                     sizeof(enable_flag));
+        ::setsockopt(socket_, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char *>(&enable_flag), sizeof(enable_flag));
     }
 
     // Send exactly n_bytes of the given data.
@@ -115,8 +119,7 @@ public:
         size_t bytes_sent = 0;
         while (bytes_sent < n_bytes) {
             const int send_flags = 0;
-            auto write_result =
-                ::send(socket_, data + bytes_sent, (int)(n_bytes - bytes_sent), send_flags);
+            auto write_result = ::send(socket_, data + bytes_sent, (int)(n_bytes - bytes_sent), send_flags);
             if (write_result == SOCKET_ERROR) {
                 int last_error = ::WSAGetLastError();
                 close();

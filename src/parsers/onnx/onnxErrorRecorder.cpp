@@ -8,13 +8,13 @@
  * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
 #include "onnxErrorRecorder.hpp"
+
 #include <exception>
 
 namespace onnx2trt {
 
-ONNXParserErrorRecorder *
-ONNXParserErrorRecorder::create(nvinfer1::ILogger *logger,
-                                nvinfer1::IErrorRecorder *otherRecorder) {
+ONNXParserErrorRecorder *ONNXParserErrorRecorder::create(nvinfer1::ILogger *logger,
+                                                         nvinfer1::IErrorRecorder *otherRecorder) {
     try {
         auto recorder = new ONNXParserErrorRecorder(logger, otherRecorder);
         if (recorder) {
@@ -34,15 +34,13 @@ void ONNXParserErrorRecorder::destroy(ONNXParserErrorRecorder *&recorder) {
     }
 }
 
-void ONNXParserErrorRecorder::logError(nvinfer1::ILogger *logger,
-                                       const char *str) {
+void ONNXParserErrorRecorder::logError(nvinfer1::ILogger *logger, const char *str) {
     if (logger) {
         logger->log(ILogger::Severity::kERROR, str);
     }
 }
 
-ONNXParserErrorRecorder::ONNXParserErrorRecorder(
-    nvinfer1::ILogger *logger, nvinfer1::IErrorRecorder *otherRecorder)
+ONNXParserErrorRecorder::ONNXParserErrorRecorder(nvinfer1::ILogger *logger, nvinfer1::IErrorRecorder *otherRecorder)
     : mUserRecorder(otherRecorder), mLogger(logger) {
     if (mUserRecorder) {
         mUserRecorder->incRefCount();
@@ -65,9 +63,7 @@ void ONNXParserErrorRecorder::clear() noexcept {
     }
 };
 
-bool ONNXParserErrorRecorder::reportError(
-    nvinfer1::ErrorCode val,
-    nvinfer1::IErrorRecorder::ErrorDesc desc) noexcept {
+bool ONNXParserErrorRecorder::reportError(nvinfer1::ErrorCode val, nvinfer1::IErrorRecorder::ErrorDesc desc) noexcept {
     try {
         std::lock_guard<std::mutex> guard(mStackLock);
         mErrorStack.push_back(errorPair(val, desc));
@@ -83,14 +79,12 @@ bool ONNXParserErrorRecorder::reportError(
     return true;
 }
 
-nvinfer1::IErrorRecorder::RefCount
-ONNXParserErrorRecorder::incRefCount() noexcept {
+nvinfer1::IErrorRecorder::RefCount ONNXParserErrorRecorder::incRefCount() noexcept {
     // Atomically increment or decrement the ref counter.
     return ++mRefCount;
 }
 
-nvinfer1::IErrorRecorder::RefCount
-ONNXParserErrorRecorder::decRefCount() noexcept {
+nvinfer1::IErrorRecorder::RefCount ONNXParserErrorRecorder::decRefCount() noexcept {
     auto newVal = --mRefCount;
     if (newVal == 0) {
         delete this;

@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <cuda_fp16.h>
+
 #include <algorithm>
 #include <stdexcept>
-
-#include <cuda_fp16.h>
 
 #include "instanceNormalizationPlugin.h"
 
 using namespace nvinfer1::plugin;
 
-template<typename T, int32_t THREADS_PER_CTA>
-__global__ __launch_bounds__(THREADS_PER_CTA) void in3dReluActivation(T *__restrict dst, T *__restrict src, float alpha, int32_t count) {
+template <typename T, int32_t THREADS_PER_CTA>
+__global__ __launch_bounds__(THREADS_PER_CTA) void in3dReluActivation(T *__restrict dst, T *__restrict src, float alpha,
+                                                                      int32_t count) {
     int32_t idx = blockIdx.x * THREADS_PER_CTA + threadIdx.x;
     if (idx >= count)
         return;
@@ -47,8 +48,7 @@ cudnnStatus_t convertTrt2cudnnDtype(nvinfer1::DataType trt_dtype, cudnnDataType_
 
 int32_t InstanceNormalizationPlugin::enqueue(const nvinfer1::PluginTensorDesc *inputDesc,
                                              const nvinfer1::PluginTensorDesc *outputDesc, const void *const *inputs,
-                                             void *const *outputs, void *workspace,
-                                             cudaStream_t stream) noexcept {
+                                             void *const *outputs, void *workspace, cudaStream_t stream) noexcept {
     nvinfer1::Dims input_dims = inputDesc[0].dims;
     // early return for empty tensor
     if (std::any_of(input_dims.d, input_dims.d + input_dims.nbDims, [](int32_t d) { return d == 0; })) {
@@ -60,10 +60,13 @@ int32_t InstanceNormalizationPlugin::enqueue(const nvinfer1::PluginTensorDesc *i
             const int32_t kBLOCK_SZ = 256;
             switch (type) {
                 case nvinfer1::DataType::kFLOAT:
-                    in3dReluActivation < float, kBLOCK_SZ ><<<(count + kBLOCK_SZ - 1) / kBLOCK_SZ, kBLOCK_SZ, 0, stream>>>(static_cast<float *>(inOut), static_cast<float *>(inOut), mAlpha, count);
+                    in3dReluActivation<float, kBLOCK_SZ><<<(count + kBLOCK_SZ - 1) / kBLOCK_SZ, kBLOCK_SZ, 0, stream>>>(
+                        static_cast<float *>(inOut), static_cast<float *>(inOut), mAlpha, count);
                     break;
                 case nvinfer1::DataType::kHALF:
-                    in3dReluActivation < __half, kBLOCK_SZ ><<<(count + kBLOCK_SZ - 1) / kBLOCK_SZ, kBLOCK_SZ, 0, stream>>>(static_cast<__half *>(inOut), static_cast<__half *>(inOut), mAlpha, count);
+                    in3dReluActivation<__half, kBLOCK_SZ>
+                        <<<(count + kBLOCK_SZ - 1) / kBLOCK_SZ, kBLOCK_SZ, 0, stream>>>(
+                            static_cast<__half *>(inOut), static_cast<__half *>(inOut), mAlpha, count);
                     break;
                 default:
                     assert(0);
@@ -101,10 +104,9 @@ int32_t InstanceNormalizationPlugin::enqueue(const nvinfer1::PluginTensorDesc *i
         //       overflows (NaNs) for fp32 data in some circumstances. The lower-
         //       performance CUDNN_BATCHNORM_SPATIAL should be used if this is not
         //       acceptable.
-        CUDNNCHECK(cudnnBatchNormalizationForwardTraining(mCudnnHandle, CUDNN_BATCHNORM_SPATIAL_PERSISTENT, &alpha,
-                                                           &beta, mXDescriptor, x_ptr, mYDescriptor, y_ptr,
-                                                           mBDescriptor, d_scale, d_bias, 1., nullptr, nullptr,
-                                                           mEpsilon, nullptr, nullptr));
+        CUDNNCHECK(cudnnBatchNormalizationForwardTraining(
+            mCudnnHandle, CUDNN_BATCHNORM_SPATIAL_PERSISTENT, &alpha, &beta, mXDescriptor, x_ptr, mYDescriptor, y_ptr,
+            mBDescriptor, d_scale, d_bias, 1., nullptr, nullptr, mEpsilon, nullptr, nullptr));
 
         callRelu(y_ptr, n * c * h * w, inputDesc[0].type);
     } else {
@@ -120,11 +122,12 @@ int32_t InstanceNormalizationPlugin::enqueue(const nvinfer1::PluginTensorDesc *i
 
             // Note: We repeat the data for each batch entry so that we can do the full
             //       computation in a single CUDNN call in enqueue().
-            float *_d_array = (float *) workspace;
+            float *_d_array = (float *)workspace;
             float *d_scale = &_d_array[0];
             float *d_bias = &_d_array[n * c];
             for (int32_t i = 0; i < n; ++i) {
-                CUDACHECK(cudaMemcpyAsync(d_scale + i * c, mDeviceScale, nchan_bytes, cudaMemcpyDeviceToDevice, stream));
+                CUDACHECK(
+                    cudaMemcpyAsync(d_scale + i * c, mDeviceScale, nchan_bytes, cudaMemcpyDeviceToDevice, stream));
                 CUDACHECK(cudaMemcpyAsync(d_bias + i * c, mDeviceBias, nchan_bytes, cudaMemcpyDeviceToDevice, stream));
             }
 
@@ -150,14 +153,13 @@ int32_t InstanceNormalizationPlugin::enqueue(const nvinfer1::PluginTensorDesc *i
             //       overflows (NaNs) for fp32 data in some circumstances. The lower-
             //       performance CUDNN_BATCHNORM_SPATIAL should be used if this is not
             //       acceptable.
-            CUDNNCHECK(cudnnBatchNormalizationForwardTraining(mCudnnHandle, CUDNN_BATCHNORM_SPATIAL_PERSISTENT, &alpha,
-                                                               &beta, mXDescriptor, x_ptr, mYDescriptor, y_ptr,
-                                                               mBDescriptor, d_scale, d_bias, 1., nullptr, nullptr,
-                                                               mEpsilon, nullptr, nullptr));
+            CUDNNCHECK(cudnnBatchNormalizationForwardTraining(
+                mCudnnHandle, CUDNN_BATCHNORM_SPATIAL_PERSISTENT, &alpha, &beta, mXDescriptor, x_ptr, mYDescriptor,
+                y_ptr, mBDescriptor, d_scale, d_bias, 1., nullptr, nullptr, mEpsilon, nullptr, nullptr));
 
             callRelu(y_ptr, n * c * d * h * w, inputDesc[0].type);
-        } else if (inputDesc[0].format == nvinfer1::PluginFormat::kDHWC8
-                   || inputDesc[0].format == nvinfer1::PluginFormat::kCDHW32) {
+        } else if (inputDesc[0].format == nvinfer1::PluginFormat::kDHWC8 ||
+                   inputDesc[0].format == nvinfer1::PluginFormat::kCDHW32) {
             int32_t input_data_type = (inputDesc[0].type == nvinfer1::DataType::kHALF) ? 1 : 2;
             int32_t output_data_type = (outputDesc[0].type == nvinfer1::DataType::kHALF) ? 1 : 2;
 
@@ -174,8 +176,8 @@ int32_t InstanceNormalizationPlugin::enqueue(const nvinfer1::PluginTensorDesc *i
             params.n = n;
 
             size_t size_sums, size_counts, size_retired_ctas;
-            instanceNormBufferSizesDispatch(
-                    mContext, params, size_sums, size_counts, size_retired_ctas, input_data_type, output_data_type);
+            instanceNormBufferSizesDispatch(mContext, params, size_sums, size_counts, size_retired_ctas,
+                                            input_data_type, output_data_type);
 
             size_t size_nc = n * c * sizeof(float);
             size_nc = ((size_nc + 256 - 1) / 256) * 256;
@@ -203,9 +205,9 @@ int32_t InstanceNormalizationPlugin::enqueue(const nvinfer1::PluginTensorDesc *i
             params.gmem_scale = mDeviceScale;
 
             params.var_eps = mEpsilon;
-            params.exp_avg_factor = 1.F; //(float)exp_avg_factor;
-            params.use_relu = mRelu;     // use_relu;
-            params.relu_alpha = mAlpha;  // relu_alpha;
+            params.exp_avg_factor = 1.F;  //(float)exp_avg_factor;
+            params.use_relu = mRelu;      // use_relu;
+            params.relu_alpha = mAlpha;   // relu_alpha;
 
             params.in_scale = inputDesc[0].scale;
             assert(outputDesc[0].scale != 0.F);

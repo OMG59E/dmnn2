@@ -4,7 +4,7 @@
 #pragma once
 
 #ifndef SPDLOG_HEADER_ONLY
-    #include <spdlog/common.h>
+#include <spdlog/common.h>
 #endif
 
 #include <algorithm>
@@ -44,8 +44,7 @@ SPDLOG_INLINE spdlog::level::level_enum from_str(const std::string &name) SPDLOG
 }
 }  // namespace level
 
-SPDLOG_INLINE spdlog_ex::spdlog_ex(std::string msg)
-    : msg_(std::move(msg)) {}
+SPDLOG_INLINE spdlog_ex::spdlog_ex(std::string msg) : msg_(std::move(msg)) {}
 
 SPDLOG_INLINE spdlog_ex::spdlog_ex(const std::string &msg, int last_errno) {
 #ifdef SPDLOG_USE_STD_FORMAT
@@ -57,12 +56,16 @@ SPDLOG_INLINE spdlog_ex::spdlog_ex(const std::string &msg, int last_errno) {
 #endif
 }
 
-SPDLOG_INLINE const char *spdlog_ex::what() const SPDLOG_NOEXCEPT { return msg_.c_str(); }
+SPDLOG_INLINE const char *spdlog_ex::what() const SPDLOG_NOEXCEPT {
+    return msg_.c_str();
+}
 
 SPDLOG_INLINE void throw_spdlog_ex(const std::string &msg, int last_errno) {
     SPDLOG_THROW(spdlog_ex(msg, last_errno));
 }
 
-SPDLOG_INLINE void throw_spdlog_ex(std::string msg) { SPDLOG_THROW(spdlog_ex(std::move(msg))); }
+SPDLOG_INLINE void throw_spdlog_ex(std::string msg) {
+    SPDLOG_THROW(spdlog_ex(std::move(msg)));
+}
 
 }  // namespace spdlog

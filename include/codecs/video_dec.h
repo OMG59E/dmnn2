@@ -8,16 +8,16 @@
  * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
 #pragma once
-#include "base_types.h"
 #include <queue>
+
+#include "base_types.h"
 
 namespace nv {
 class VideoDecoder {
 public:
     VideoDecoder() = default;
     ~VideoDecoder();
-    int open(const std::string &filename, int device_id,
-             CUcontext ctx = nullptr);
+    int open(const std::string &filename, int device_id, CUcontext ctx = nullptr);
     int read(nv::Frame &frame, bool use_key = false);
     int height() const;
     int width() const;

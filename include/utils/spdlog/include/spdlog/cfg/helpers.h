@@ -4,6 +4,7 @@
 #pragma once
 
 #include <spdlog/common.h>
+
 #include <unordered_map>
 
 namespace spdlog {
@@ -25,5 +26,5 @@ SPDLOG_API void load_levels(const std::string &txt);
 }  // namespace spdlog
 
 #ifdef SPDLOG_HEADER_ONLY
-    #include "helpers-inl.h"
+#include "helpers-inl.h"
 #endif  // SPDLOG_HEADER_ONLY

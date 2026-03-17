@@ -17,21 +17,30 @@
 
 namespace nvcaffeparser1 {
 class BinaryProtoBlob : public IBinaryProtoBlob {
-  public:
-    BinaryProtoBlob(void *memory, nvinfer1::DataType type,
-                    nvinfer1::Dims4 dimensions)
+public:
+    BinaryProtoBlob(void *memory, nvinfer1::DataType type, nvinfer1::Dims4 dimensions)
         : mMemory(memory), mDataType(type), mDimensions(dimensions) {}
 
-    nvinfer1::Dims4 getDimensions() noexcept override { return mDimensions; }
-    nvinfer1::DataType getDataType() noexcept override { return mDataType; }
-    const void *getData() noexcept override { return mMemory; }
-    void destroy() noexcept override { delete this; }
-    ~BinaryProtoBlob() override { free(mMemory); }
+    nvinfer1::Dims4 getDimensions() noexcept override {
+        return mDimensions;
+    }
+    nvinfer1::DataType getDataType() noexcept override {
+        return mDataType;
+    }
+    const void *getData() noexcept override {
+        return mMemory;
+    }
+    void destroy() noexcept override {
+        delete this;
+    }
+    ~BinaryProtoBlob() override {
+        free(mMemory);
+    }
 
     void *mMemory;
     nvinfer1::DataType mDataType;
     nvinfer1::Dims4 mDimensions;
 };
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1
 
-#endif // TRT_CAFFE_PARSER_BINARY_PROTO_BLOB_H
+#endif  // TRT_CAFFE_PARSER_BINARY_PROTO_BLOB_H

@@ -8,13 +8,14 @@
  * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
 #pragma once
+#include <string>
+
 #include "spdlog/pattern_formatter.h"
 #include "spdlog/sinks/rotating_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/sinks/stdout_sinks.h"
 #include "spdlog/spdlog.h"
 #include "spdlog/version.h"
-#include <string>
 #ifdef _WIN32
 #include <dbghelp.h>
 #include <windows.h>
@@ -42,8 +43,7 @@ static void print_stacktrace() {
     HANDLE process = GetCurrentProcess();
     SymInitialize(process, NULL, TRUE);
     unsigned short frames = CaptureStackBackTrace(0, 100, stack, NULL);
-    SYMBOL_INFO *symbol =
-        (SYMBOL_INFO *)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
+    SYMBOL_INFO *symbol = (SYMBOL_INFO *)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
     symbol->MaxNameLen = 255;
     symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 
@@ -74,30 +74,29 @@ static void print_stacktrace() {
 #endif
 }
 
-#define LOG_FATAL(...)                                                         \
-    do {                                                                       \
-        LOG_ERROR(__VA_ARGS__);                                                \
-        print_stacktrace();                                                    \
-        LOG_FLUSH;                                                             \
-        std::abort();                                                          \
+#define LOG_FATAL(...)          \
+    do {                        \
+        LOG_ERROR(__VA_ARGS__); \
+        print_stacktrace();     \
+        LOG_FLUSH;              \
+        std::abort();           \
     } while (0)
 
 // 定义 LOG_ASSERT 宏，检查条件并打印堆栈信息
-#define LOG_ASSERT(condition)                                                  \
-    do {                                                                       \
-        if (!(condition)) {                                                    \
-            LOG_ERROR("Assertion failed: {}", #condition);                     \
-            print_stacktrace();                                                \
-            LOG_FLUSH;                                                         \
-            std::abort();                                                      \
-        }                                                                      \
+#define LOG_ASSERT(condition)                              \
+    do {                                                   \
+        if (!(condition)) {                                \
+            LOG_ERROR("Assertion failed: {}", #condition); \
+            print_stacktrace();                            \
+            LOG_FLUSH;                                     \
+            std::abort();                                  \
+        }                                                  \
     } while (0)
 
 static void InitGoogleLogging() {
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     std::vector<spdlog::sink_ptr> sinks{console_sink};
-    auto logger = std::make_shared<spdlog::logger>(CONSOLE_LOGGER,
-                                                   sinks.begin(), sinks.end());
+    auto logger = std::make_shared<spdlog::logger>(CONSOLE_LOGGER, sinks.begin(), sinks.end());
     spdlog::register_logger(logger);
     spdlog::set_default_logger(logger);
     spdlog::set_pattern("%^%L%m%d %T.%e %t %s:%#] %v%$");
@@ -105,20 +104,18 @@ static void InitGoogleLogging() {
     //          SPDLOG_VER_PATCH);
 }
 
-static void InitGoogleLogging(const std::string &logpath,
-                              size_t rotating_file_size,
-                              size_t rotating_file_num, bool alsologtostderr) {
+static void InitGoogleLogging(const std::string &logpath, size_t rotating_file_size, size_t rotating_file_num,
+                              bool alsologtostderr) {
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     std::vector<spdlog::sink_ptr> sinks{console_sink};
     std::string logger_name = FILE_LOGGER;
     if (alsologtostderr) {
-        auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-            logpath, rotating_file_size, rotating_file_num);
+        auto file_sink =
+            std::make_shared<spdlog::sinks::rotating_file_sink_mt>(logpath, rotating_file_size, rotating_file_num);
         sinks.emplace_back(file_sink);
         logger_name = DEFAULT_LOGGER;
     }
-    auto logger = std::make_shared<spdlog::logger>(logger_name, sinks.begin(),
-                                                   sinks.end());
+    auto logger = std::make_shared<spdlog::logger>(logger_name, sinks.begin(), sinks.end());
     spdlog::register_logger(logger);
     spdlog::set_default_logger(logger);
     spdlog::set_pattern("%^%L%m%d %T.%e %t %s:%#] %v%$");

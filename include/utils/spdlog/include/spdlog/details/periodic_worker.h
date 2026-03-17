@@ -21,8 +21,7 @@ namespace details {
 class SPDLOG_API periodic_worker {
 public:
     template <typename Rep, typename Period>
-    periodic_worker(const std::function<void()> &callback_fun,
-                    std::chrono::duration<Rep, Period> interval) {
+    periodic_worker(const std::function<void()> &callback_fun, std::chrono::duration<Rep, Period> interval) {
         active_ = (interval > std::chrono::duration<Rep, Period>::zero());
         if (!active_) {
             return;
@@ -38,7 +37,9 @@ public:
             }
         });
     }
-    std::thread &get_thread() { return worker_thread_; }
+    std::thread &get_thread() {
+        return worker_thread_;
+    }
     periodic_worker(const periodic_worker &) = delete;
     periodic_worker &operator=(const periodic_worker &) = delete;
     // stop the worker thread and join it
@@ -54,5 +55,5 @@ private:
 }  // namespace spdlog
 
 #ifdef SPDLOG_HEADER_ONLY
-    #include "periodic_worker-inl.h"
+#include "periodic_worker-inl.h"
 #endif

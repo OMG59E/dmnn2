@@ -23,8 +23,7 @@ template <typename T>
 class mpmc_blocking_queue {
 public:
     using item_type = T;
-    explicit mpmc_blocking_queue(size_t max_items)
-        : q_(max_items) {}
+    explicit mpmc_blocking_queue(size_t max_items) : q_(max_items) {}
 
 #ifndef __MINGW32__
     // try to enqueue and block if no room left
@@ -152,7 +151,9 @@ public:
         return q_.overrun_counter();
     }
 
-    size_t discard_counter() { return discard_counter_.load(std::memory_order_relaxed); }
+    size_t discard_counter() {
+        return discard_counter_.load(std::memory_order_relaxed);
+    }
 
     size_t size() {
         std::unique_lock<std::mutex> lock(queue_mutex_);
@@ -164,7 +165,9 @@ public:
         q_.reset_overrun_counter();
     }
 
-    void reset_discard_counter() { discard_counter_.store(0, std::memory_order_relaxed); }
+    void reset_discard_counter() {
+        discard_counter_.store(0, std::memory_order_relaxed);
+    }
 
 private:
     std::mutex queue_mutex_;

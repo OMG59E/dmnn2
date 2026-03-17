@@ -8,13 +8,15 @@
  * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
 #pragma once
-#include "base_types.h"
-#include "error_check.h"
 #include <cuda_runtime_api.h>
-#include <fstream>
 #include <nvjpeg.h>
+
+#include <fstream>
 #include <string>
 #include <vector>
+
+#include "base_types.h"
+#include "error_check.h"
 
 namespace nv {
 class DECLSPEC_API JpegDecoder {

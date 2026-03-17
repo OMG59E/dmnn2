@@ -7,9 +7,9 @@
 #include <spdlog/details/null_mutex.h>
 #include <spdlog/sinks/base_sink.h>
 #ifdef _WIN32
-    #include <spdlog/details/tcp_client-windows.h>
+#include <spdlog/details/tcp_client-windows.h>
 #else
-    #include <spdlog/details/tcp_client.h>
+#include <spdlog/details/tcp_client.h>
 #endif
 
 #include <chrono>
@@ -33,9 +33,7 @@ struct tcp_sink_config {
     int server_port;
     bool lazy_connect = false;  // if true connect on first log call instead of on construction
 
-    tcp_sink_config(std::string host, int port)
-        : server_host{std::move(host)},
-          server_port{port} {}
+    tcp_sink_config(std::string host, int port) : server_host{std::move(host)}, server_port{port} {}
 };
 
 template <typename Mutex>
@@ -44,8 +42,7 @@ public:
     // connect to tcp host/port or throw if failed
     // host can be hostname or ip address
 
-    explicit tcp_sink(tcp_sink_config sink_config)
-        : config_{std::move(sink_config)} {
+    explicit tcp_sink(tcp_sink_config sink_config) : config_{std::move(sink_config)} {
         if (!config_.lazy_connect) {
             this->client_.connect(config_.server_host, config_.server_port);
         }

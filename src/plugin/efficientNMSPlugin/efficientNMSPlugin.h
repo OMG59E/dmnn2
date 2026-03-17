@@ -1,18 +1,19 @@
-/*** 
+/***
  * @Author: xingwg
  * @Date: 2024-12-06 16:13:59
  * @LastEditTime: 2024-12-08 01:10:01
  * @FilePath: /dmnn2/src/plugin/efficientNMSPlugin/efficientNMSPlugin.h
- * @Description: 
+ * @Description:
  * @
- * @Copyright (c) 2024 by Chinasvt, All Rights Reserved. 
+ * @Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
 #pragma once
 
 #include <vector>
+
 #include "../common/plugin.h"
-#include "efficientNMSParameters.h"
 #include "efficientNMSInference.h"
+#include "efficientNMSParameters.h"
 
 char const *const kEFFICIENT_NMS_PLUGIN_VERSION{"1"};
 char const *const kEFFICIENT_NMS_PLUGIN_NAME{"EfficientNMS_TRT"};
@@ -23,13 +24,19 @@ namespace nvinfer1::plugin {
 
 class EfficientNMSPlugin : public IPluginV2DynamicExt {
 public:
-    explicit EfficientNMSPlugin(EfficientNMSParameters param) : mParam(param) {};
-    EfficientNMSPlugin(void const* data, size_t length) { deserialize(static_cast<const char *>(data), length); };
+    explicit EfficientNMSPlugin(EfficientNMSParameters param) : mParam(param){};
+    EfficientNMSPlugin(void const *data, size_t length) {
+        deserialize(static_cast<const char *>(data), length);
+    };
     ~EfficientNMSPlugin() override = default;
 
     // IPluginV2 methods
-    char const* getPluginType() const noexcept override { return kEFFICIENT_NMS_PLUGIN_NAME; }
-    char const* getPluginVersion() const noexcept override { return kEFFICIENT_NMS_PLUGIN_VERSION; }
+    char const *getPluginType() const noexcept override {
+        return kEFFICIENT_NMS_PLUGIN_NAME;
+    }
+    char const *getPluginVersion() const noexcept override {
+        return kEFFICIENT_NMS_PLUGIN_VERSION;
+    }
     int32_t getNbOutputs() const noexcept override {
         if (mParam.outputONNXIndices) {
             // ONNX NonMaxSuppression Compatibility
@@ -56,25 +63,31 @@ public:
         return STATUS_SUCCESS;
     }
     void terminate() noexcept override {}
-    size_t getSerializationSize() const noexcept override { return sizeof(EfficientNMSParameters); }
-    void serialize(void* buffer) const noexcept override {
+    size_t getSerializationSize() const noexcept override {
+        return sizeof(EfficientNMSParameters);
+    }
+    void serialize(void *buffer) const noexcept override {
         char *d = reinterpret_cast<char *>(buffer), *a = d;
         write(d, mParam);
         LOG_ASSERT(d == a + getSerializationSize());
     }
-    void destroy() noexcept override { delete this; }
-    void setPluginNamespace(char const* pluginNamespace) noexcept override {
+    void destroy() noexcept override {
+        delete this;
+    }
+    void setPluginNamespace(char const *pluginNamespace) noexcept override {
         try {
             mNamespace = pluginNamespace;
-        }
-        catch (std::exception const &e) {
+        } catch (std::exception const &e) {
             LOG_ERROR(e.what());
         }
     }
-    char const* getPluginNamespace() const noexcept override { return mNamespace.c_str(); }
+    char const *getPluginNamespace() const noexcept override {
+        return mNamespace.c_str();
+    }
 
     // IPluginV2Ext methods
-    nvinfer1::DataType getOutputDataType(int32_t index, nvinfer1::DataType const* inputTypes, int32_t nbInputs) const noexcept override {
+    nvinfer1::DataType getOutputDataType(int32_t index, nvinfer1::DataType const *inputTypes,
+                                         int32_t nbInputs) const noexcept override {
         if (mParam.outputONNXIndices) {
             // ONNX NMS uses an integer output
             return nvinfer1::DataType::kINT32;
@@ -88,18 +101,18 @@ public:
     }
 
     // IPluginV2DynamicExt methods
-    IPluginV2DynamicExt* clone() const noexcept override {
+    IPluginV2DynamicExt *clone() const noexcept override {
         try {
             auto *plugin = new EfficientNMSPlugin(mParam);
             plugin->setPluginNamespace(mNamespace.c_str());
             return plugin;
-        }
-        catch (std::exception const &e) {
+        } catch (std::exception const &e) {
             LOG_ERROR(e.what());
         }
         return nullptr;
     }
-    DimsExprs getOutputDimensions(int32_t outputIndex, DimsExprs const* inputs, int32_t nbInputs, IExprBuilder& exprBuilder) noexcept override {
+    DimsExprs getOutputDimensions(int32_t outputIndex, DimsExprs const *inputs, int32_t nbInputs,
+                                  IExprBuilder &exprBuilder) noexcept override {
         try {
             DimsExprs out_dim{};
             // When pad per class is set, the output size may need to be reduced:
@@ -111,7 +124,9 @@ public:
             if (mParam.padOutputBoxesPerClass && mParam.numOutputBoxesPerClass > 0) {
                 IDimensionExpr const *numOutputBoxesPerClass = exprBuilder.constant(mParam.numOutputBoxesPerClass);
                 IDimensionExpr const *numClasses = inputs[1].d[2];
-                numOutputBoxes = exprBuilder.operation(DimensionOperation::kMIN, *numOutputBoxes, *exprBuilder.operation(DimensionOperation::kPROD, *numOutputBoxesPerClass, *numClasses));
+                numOutputBoxes = exprBuilder.operation(
+                    DimensionOperation::kMIN, *numOutputBoxes,
+                    *exprBuilder.operation(DimensionOperation::kPROD, *numOutputBoxesPerClass, *numClasses));
             }
 
             if (mParam.outputONNXIndices) {
@@ -149,7 +164,8 @@ public:
         }
         return DimsExprs{};
     }
-    bool supportsFormatCombination(int32_t pos, PluginTensorDesc const* inOut, int32_t nbInputs, int32_t nbOutputs) noexcept override {
+    bool supportsFormatCombination(int32_t pos, PluginTensorDesc const *inOut, int32_t nbInputs,
+                                   int32_t nbOutputs) noexcept override {
         if (inOut[pos].format != PluginFormat::kLINEAR)
             return false;
 
@@ -160,7 +176,8 @@ public:
             if (pos == 2)
                 return inOut[pos].type == DataType::kINT32;
             // boxes and scores input: fp32 or fp16
-            return (inOut[pos].type == DataType::kHALF || inOut[pos].type == DataType::kFLOAT) && (inOut[0].type == inOut[pos].type);
+            return (inOut[pos].type == DataType::kHALF || inOut[pos].type == DataType::kFLOAT) &&
+                   (inOut[0].type == inOut[pos].type);
         }
 
         LOG_ASSERT(nbInputs == 2 || nbInputs == 3);
@@ -174,9 +191,11 @@ public:
         if (posOut == 0 || posOut == 3)
             return inOut[pos].type == DataType::kINT32 && inOut[pos].format == PluginFormat::kLINEAR;
         // all other inputs/outputs: fp32 or fp16
-        return (inOut[pos].type == DataType::kHALF || inOut[pos].type == DataType::kFLOAT) && (inOut[0].type == inOut[pos].type);
+        return (inOut[pos].type == DataType::kHALF || inOut[pos].type == DataType::kFLOAT) &&
+               (inOut[0].type == inOut[pos].type);
     }
-    void configurePlugin(DynamicPluginTensorDesc const* in, int32_t nbInputs, DynamicPluginTensorDesc const* out, int32_t nbOutputs) noexcept override {
+    void configurePlugin(DynamicPluginTensorDesc const *in, int32_t nbInputs, DynamicPluginTensorDesc const *out,
+                         int32_t nbOutputs) noexcept override {
         try {
             if (mParam.outputONNXIndices) {
                 // Accepts two inputs
@@ -238,13 +257,15 @@ public:
             LOG_ERROR(e.what());
         }
     }
-    size_t getWorkspaceSize(PluginTensorDesc const* inputs, int32_t nbInputs, PluginTensorDesc const* outputs, int32_t nbOutputs) const noexcept override {
+    size_t getWorkspaceSize(PluginTensorDesc const *inputs, int32_t nbInputs, PluginTensorDesc const *outputs,
+                            int32_t nbOutputs) const noexcept override {
         int32_t batchSize = inputs[1].dims.d[0];
         int32_t numScoreElements = inputs[1].dims.d[1] * inputs[1].dims.d[2];
         int32_t numClasses = inputs[1].dims.d[2];
         return EfficientNMSWorkspaceSize(batchSize, numScoreElements, numClasses, mParam.datatype);
     }
-    int32_t enqueue(PluginTensorDesc const* inputDesc, PluginTensorDesc const* outputDesc, void const* const* inputs, void* const* outputs, void* workspace, cudaStream_t stream) noexcept override {
+    int32_t enqueue(PluginTensorDesc const *inputDesc, PluginTensorDesc const *outputDesc, void const *const *inputs,
+                    void *const *outputs, void *workspace, cudaStream_t stream) noexcept override {
         try {
             mParam.batchSize = inputDesc[0].dims.d[0];
             if (mParam.outputONNXIndices) {
@@ -252,7 +273,8 @@ public:
                 void const *const boxesInput = inputs[0];
                 void const *const scoresInput = inputs[1];
                 void *nmsIndicesOutput = outputs[0];
-                return EfficientNMSInference(mParam, boxesInput, scoresInput, nullptr, nullptr, nullptr, nullptr, nullptr, nmsIndicesOutput, workspace, stream);
+                return EfficientNMSInference(mParam, boxesInput, scoresInput, nullptr, nullptr, nullptr, nullptr,
+                                             nullptr, nmsIndicesOutput, workspace, stream);
             }
             // Standard NMS Operation
             void const *const boxesInput = inputs[0];
@@ -262,7 +284,8 @@ public:
             void *nmsBoxesOutput = outputs[1];
             void *nmsScoresOutput = outputs[2];
             void *nmsClassesOutput = outputs[3];
-            return EfficientNMSInference(mParam, boxesInput, scoresInput, anchorsInput, numDetectionsOutput, nmsBoxesOutput, nmsScoresOutput, nmsClassesOutput, nullptr, workspace, stream);
+            return EfficientNMSInference(mParam, boxesInput, scoresInput, anchorsInput, numDetectionsOutput,
+                                         nmsBoxesOutput, nmsScoresOutput, nmsClassesOutput, nullptr, workspace, stream);
         } catch (std::exception const &e) {
             LOG_ERROR(e.what());
         }
@@ -275,9 +298,9 @@ protected:
     std::string mNamespace;
 
 private:
-    void deserialize(const char* data, size_t length) {
+    void deserialize(const char *data, size_t length) {
         auto const *d{data};
-        mParam = read < EfficientNMSParameters > (d);
+        mParam = read<EfficientNMSParameters>(d);
         LOG_ASSERT(d == data + length);
     }
 };
@@ -299,16 +322,24 @@ public:
     }
     ~EfficientNMSPluginCreator() override = default;
 
-    char const* getPluginName() const noexcept override { return kEFFICIENT_NMS_PLUGIN_NAME; }
-    char const* getPluginVersion() const noexcept override { return kEFFICIENT_NMS_PLUGIN_VERSION; }
-    PluginFieldCollection const* getFieldNames() noexcept override { return &mFC; }
+    char const *getPluginName() const noexcept override {
+        return kEFFICIENT_NMS_PLUGIN_NAME;
+    }
+    char const *getPluginVersion() const noexcept override {
+        return kEFFICIENT_NMS_PLUGIN_VERSION;
+    }
+    PluginFieldCollection const *getFieldNames() noexcept override {
+        return &mFC;
+    }
 
-    IPluginV2DynamicExt* createPlugin(char const* name, PluginFieldCollection const* fc) noexcept override {
+    IPluginV2DynamicExt *createPlugin(char const *name, PluginFieldCollection const *fc) noexcept override {
         try {
             LOG_ASSERT(fc != nullptr);
             PluginField const *fields = fc->fields;
             LOG_ASSERT(fields != nullptr);
-            plugin::validateRequiredAttributesExist({"score_threshold", "iou_threshold", "max_output_boxes", "background_class", "score_activation", "box_coding"}, fc);
+            plugin::validateRequiredAttributesExist({"score_threshold", "iou_threshold", "max_output_boxes",
+                                                     "background_class", "score_activation", "box_coding"},
+                                                    fc);
             for (int32_t i{0}; i < fc->nbFields; ++i) {
                 char const *attrName = fields[i].name;
                 if (!strcmp(attrName, "score_threshold")) {
@@ -358,7 +389,8 @@ public:
         }
         return nullptr;
     }
-    IPluginV2DynamicExt* deserializePlugin(char const* name, void const* serialData, size_t serialLength) noexcept override {
+    IPluginV2DynamicExt *deserializePlugin(char const *name, void const *serialData,
+                                           size_t serialLength) noexcept override {
         try {
             // This object will be deleted when the network is destroyed, which will
             // call EfficientNMSPlugin::destroy()
@@ -392,11 +424,17 @@ public:
     }
     ~EfficientNMSONNXPluginCreator() override = default;
 
-    char const* getPluginName() const noexcept override { return kEFFICIENT_NMS_ONNX_PLUGIN_NAME; }
-    char const* getPluginVersion() const noexcept override { return kEFFICIENT_NMS_ONNX_PLUGIN_VERSION; }
-    PluginFieldCollection const* getFieldNames() noexcept override { return &mFC; }
+    char const *getPluginName() const noexcept override {
+        return kEFFICIENT_NMS_ONNX_PLUGIN_NAME;
+    }
+    char const *getPluginVersion() const noexcept override {
+        return kEFFICIENT_NMS_ONNX_PLUGIN_VERSION;
+    }
+    PluginFieldCollection const *getFieldNames() noexcept override {
+        return &mFC;
+    }
 
-    IPluginV2DynamicExt* createPlugin(char const* name, PluginFieldCollection const* fc) noexcept override {
+    IPluginV2DynamicExt *createPlugin(char const *name, PluginFieldCollection const *fc) noexcept override {
         try {
             PluginField const *fields = fc->fields;
             for (int32_t i = 0; i < fc->nbFields; ++i) {
@@ -429,7 +467,8 @@ public:
         }
         return nullptr;
     }
-    IPluginV2DynamicExt* deserializePlugin(char const* name, void const* serialData, size_t serialLength) noexcept override {
+    IPluginV2DynamicExt *deserializePlugin(char const *name, void const *serialData,
+                                           size_t serialLength) noexcept override {
         try {
             // This object will be deleted when the network is destroyed, which will
             // call EfficientNMSPlugin::destroy()
@@ -449,4 +488,4 @@ protected:
     std::string mPluginName;
 };
 
-} // namespace nvinfer1::plugin
+}  // namespace nvinfer1::plugin

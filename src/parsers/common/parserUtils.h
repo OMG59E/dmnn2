@@ -22,17 +22,18 @@
 #else
 #include <unistd.h>
 #endif
+#include <NvInfer.h>
+
 #include "base_types.h"
 #include "error_check.h"
-#include <NvInfer.h>
 
 namespace parserutils {
 
-#define RETURN_AND_LOG_ERROR_IMPL(ret, message, parserName)                    \
-    do {                                                                       \
-        std::string errorMsg = parserName + std::string{message};              \
-        LOG_ERROR(errorMsg);                                                   \
-        return (ret);                                                          \
+#define RETURN_AND_LOG_ERROR_IMPL(ret, message, parserName)       \
+    do {                                                          \
+        std::string errorMsg = parserName + std::string{message}; \
+        LOG_ERROR(errorMsg);                                      \
+        return (ret);                                             \
     } while (0)
 
 // Helper function to compute unpadded volume of a Dims (1 if 0 dimensional)
@@ -50,31 +51,29 @@ inline void printMem(const char *where) {
     auto pages = static_cast<uint64_t>(sysconf(_SC_PHYS_PAGES));
     auto avPages = static_cast<uint64_t>(sysconf(_SC_AVPHYS_PAGES));
     auto pageSize = static_cast<uint64_t>(sysconf(_SC_PAGE_SIZE));
-    LOG_INFO("   (memory) {} : Free(MB) = {} total(MB)={}", where,
-             avPages * pageSize / mb, pages * pageSize / mb);
+    LOG_INFO("   (memory) {} : Free(MB) = {} total(MB)={}", where, avPages * pageSize / mb, pages * pageSize / mb);
 #elif !defined __QNX__
     const unsigned mb = 1024 * 1024;
     MEMORYSTATUSEX statex;
     statex.dwLength = sizeof(statex);
     GlobalMemoryStatusEx(&statex);
-    LOG_INFO("   (memory) {} : Free(MB) = {} total(MB)={}", where,
-             statex.ullAvailPhys / mb, statex.ullTotalPhys / mb);
+    LOG_INFO("   (memory) {} : Free(MB) = {} total(MB)={}", where, statex.ullAvailPhys / mb, statex.ullTotalPhys / mb);
 #endif
 }
 
 // Compute size of datatypes
 inline unsigned int elementSize(nvinfer1::DataType t) {
     switch (t) {
-    case nvinfer1::DataType::kINT32:
-        return 4;
-    case nvinfer1::DataType::kFLOAT:
-        return 4;
-    case nvinfer1::DataType::kHALF:
-        return 2;
-    case nvinfer1::DataType::kINT8:
-        return 1;
-    default:
-        LOG_FATAL("Invalid DataType");
+        case nvinfer1::DataType::kINT32:
+            return 4;
+        case nvinfer1::DataType::kFLOAT:
+            return 4;
+        case nvinfer1::DataType::kHALF:
+            return 2;
+        case nvinfer1::DataType::kINT8:
+            return 1;
+        default:
+            LOG_FATAL("Invalid DataType");
     }
     return 0;
 }
@@ -89,21 +88,21 @@ inline std::ostream &operator<<(std::ostream &o, const nvinfer1::Dims &dims) {
 
 inline std::ostream &operator<<(std::ostream &o, nvinfer1::DataType dt) {
     switch (dt) {
-    case nvinfer1::DataType::kINT32:
-        o << "Int32";
-        break;
-    case nvinfer1::DataType::kFLOAT:
-        o << "Float";
-        break;
-    case nvinfer1::DataType::kHALF:
-        o << "Half";
-        break;
-    case nvinfer1::DataType::kINT8:
-        o << "Int8";
-        break;
-    case nvinfer1::DataType::kBOOL:
-        o << "Bool";
-        break;
+        case nvinfer1::DataType::kINT32:
+            o << "Int32";
+            break;
+        case nvinfer1::DataType::kFLOAT:
+            o << "Float";
+            break;
+        case nvinfer1::DataType::kHALF:
+            o << "Half";
+            break;
+        case nvinfer1::DataType::kINT8:
+            o << "Int8";
+            break;
+        case nvinfer1::DataType::kBOOL:
+            o << "Bool";
+            break;
     }
     return o;
 }
@@ -114,7 +113,9 @@ inline nv::DimsCHW getCHW(const nvinfer1::Dims &d) {
     return nv::DimsCHW{d.d[d.nbDims - 3], d.d[d.nbDims - 2], d.d[d.nbDims - 1]};
 }
 
-inline int32_t getC(const nvinfer1::Dims &d) { return getCHW(d).d[0]; }
+inline int32_t getC(const nvinfer1::Dims &d) {
+    return getCHW(d).d[0];
+}
 
 inline nvinfer1::Dims toDims(int32_t w, int32_t h) noexcept {
     return nvinfer1::Dims{2, {w, h}};
@@ -127,8 +128,9 @@ inline int combineIndexDimensions(int batchSize, const nvinfer1::Dims &d) {
     return x;
 }
 
-template <typename A, typename B> inline A divUp(A m, B n) {
+template <typename A, typename B>
+inline A divUp(A m, B n) {
     return (m + n - 1) / n;
 }
-} // namespace parserutils
-#endif // PARSER_HELPER_H
+}  // namespace parserutils
+#endif  // PARSER_HELPER_H

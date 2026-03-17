@@ -21,9 +21,7 @@
 using namespace nvinfer1;
 
 namespace nvcaffeparser1 {
-ILayer *parseScale(INetworkDefinition &network,
-                   const trtcaffe::LayerParameter &msg,
-                   CaffeWeightFactory &weightFactory,
+ILayer *parseScale(INetworkDefinition &network, const trtcaffe::LayerParameter &msg, CaffeWeightFactory &weightFactory,
                    BlobNameToTensor &tensors) {
     if (!checkBlobs(msg, 1, 1))
         return nullptr;
@@ -31,15 +29,12 @@ ILayer *parseScale(INetworkDefinition &network,
     const trtcaffe::ScaleParameter &p = msg.scale_param();
     int C = parserutils::getCHW(tensors[msg.bottom(0)]->getDimensions()).c();
 
-    Weights scale =
-        weightFactory.isInitialized()
-            ? weightFactory(msg.name(), WeightType::kGENERIC)
-            : weightFactory.allocateWeights(
-                  C, std::uniform_real_distribution<float>(0.9F, 1.1F));
+    Weights scale = weightFactory.isInitialized()
+                        ? weightFactory(msg.name(), WeightType::kGENERIC)
+                        : weightFactory.allocateWeights(C, std::uniform_real_distribution<float>(0.9F, 1.1F));
     Weights shift = !p.has_bias_term() || p.bias_term()
-                        ? (weightFactory.isInitialized()
-                               ? weightFactory(msg.name(), WeightType::kBIAS)
-                               : weightFactory.allocateWeights(C))
+                        ? (weightFactory.isInitialized() ? weightFactory(msg.name(), WeightType::kBIAS)
+                                                         : weightFactory.allocateWeights(C))
                         : weightFactory.getNullWeights();
     Weights power = weightFactory.getNullWeights();
 
@@ -47,7 +42,6 @@ ILayer *parseScale(INetworkDefinition &network,
     weightFactory.convert(scale);
     weightFactory.convert(power);
 
-    return network.addScale(*tensors[msg.bottom(0)], ScaleMode::kCHANNEL, shift,
-                            scale, power);
+    return network.addScale(*tensors[msg.bottom(0)], ScaleMode::kCHANNEL, shift, scale, power);
 }
-} // namespace nvcaffeparser1
+}  // namespace nvcaffeparser1

@@ -7,24 +7,22 @@
  *
  * Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
+#include <filesystem>
+#include <vector>
+
 #include "argparse/argparse.hpp"
 #include "base_types.h"
 #include "codecs/jpeg_dec.h"
 #include "codecs/jpeg_enc.h"
 #include "imgproc/draw.h"
 #include "models/yolov5.h"
-#include <filesystem>
-#include <vector>
 
 int main(int argc, char **argv) {
     InitGoogleLogging();
     argparse::ArgumentParser parser(argv[0], std::string("1.0"));
     parser.add_argument("-m", "--model").help("Trt model file").required();
     parser.add_argument("-i", "--image").help("Set image file").required();
-    parser.add_argument("-d", "--device")
-        .help("Run in which device")
-        .default_value(0)
-        .scan<'i', int>();
+    parser.add_argument("-d", "--device").help("Run in which device").default_value(0).scan<'i', int>();
     try {
         parser.parse_args(argc, argv);
     } catch (const std::exception &err) {
@@ -68,11 +66,12 @@ int main(int argc, char **argv) {
 
     for (auto &image_detections : detections) {
         for (auto &detection : image_detections) {
-            LOG_INFO("label={:2d} "
-                     "score={:.6f} x1={:4d} "
-                     "y1={:4d} x2={:4d} y2={:4d}",
-                     detection.cls_idx, detection.score, detection.bbox.x1,
-                     detection.bbox.y1, detection.bbox.x2, detection.bbox.y2);
+            LOG_INFO(
+                "label={:2d} "
+                "score={:.6f} x1={:4d} "
+                "y1={:4d} x2={:4d} y2={:4d}",
+                detection.cls_idx, detection.score, detection.bbox.x1, detection.bbox.y1, detection.bbox.x2,
+                detection.bbox.y2);
             nv::rectangle(image, detection.bbox, nv::Color(255, 0, 0), 3);
         }
     }

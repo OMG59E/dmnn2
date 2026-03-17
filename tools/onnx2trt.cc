@@ -7,20 +7,22 @@
  *
  * Copyright (c) 2024 by Chinasvt, All Rights Reserved.
  */
+#include <NvInferPlugin.h>
+#include <NvOnnxParser.h>
+#include <string.h>
+
+#include <cassert>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
+
 #include "argparse/argparse.hpp"
 #include "calibrator.h"
 #include "common.hpp"
 #include "error_check.h"
 #include "onnx-ml.pb.h"
 #include "trt_logger.h"
-#include <NvInferPlugin.h>
-#include <NvOnnxParser.h>
-#include <cassert>
-#include <fstream>
-#include <iostream>
-#include <string.h>
-#include <string>
-#include <vector>
 
 static TrtLogger gLogger(ILogger::Severity::kVERBOSE);
 
@@ -40,26 +42,21 @@ struct Parameters {
     int DLACore{-1};
 } gParams;
 
-bool onnxToTrtModel(IInt8Calibrator *calibrator,
-                    nvinfer1::IHostMemory **trtModelStream) {
+bool onnxToTrtModel(IInt8Calibrator *calibrator, nvinfer1::IHostMemory **trtModelStream) {
     onnx::ModelProto _the_onnx_model;
     onnx::ModelProto &onnx_model = _the_onnx_model;
-    bool is_binary =
-        common::ParseFromFile_WAR(&onnx_model, gParams.model.c_str());
-    if (!is_binary &&
-        !common::ParseFromTextFile(&onnx_model, gParams.model.c_str())) {
+    bool is_binary = common::ParseFromFile_WAR(&onnx_model, gParams.model.c_str());
+    if (!is_binary && !common::ParseFromTextFile(&onnx_model, gParams.model.c_str())) {
         LOG_ERROR("Failed to parse ONNX model");
         return false;
     }
     if (onnx_model.ir_version() > onnx::IR_VERSION) {
-        LOG_WARNING("WARNING: ONNX model has a newer ir_version ({}) than this "
-                    "parser was built against ({})",
-                    common::onnx_ir_version_string(onnx_model.ir_version()),
-                    common::onnx_ir_version_string(onnx::IR_VERSION));
+        LOG_WARNING(
+            "WARNING: ONNX model has a newer ir_version ({}) than this "
+            "parser was built against ({})",
+            common::onnx_ir_version_string(onnx_model.ir_version()), common::onnx_ir_version_string(onnx::IR_VERSION));
     }
-    const auto networkFlags =
-        1U << static_cast<uint32_t>(
-            nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
+    const auto networkFlags = 1U << static_cast<uint32_t>(nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
     auto builder = nvinfer1::createInferBuilder(gLogger);
     auto network = builder->createNetworkV2(networkFlags);
     auto parser = nvonnxparser::createParser(*network, gLogger);
@@ -68,18 +65,15 @@ bool onnxToTrtModel(IInt8Calibrator *calibrator,
         LOG_ERROR("Failed to parse onnx file");
         return false;
     }
-    if (gParams.dataType == DataType::kINT8 &&
-        !builder->platformHasFastInt8()) {
+    if (gParams.dataType == DataType::kINT8 && !builder->platformHasFastInt8()) {
         LOG_ERROR("This GPU does not support int8");
         return false;
     }
     if (gParams.dataType == DataType::kINT8) {
-        calibrator = new nv::Int8EntropyCalibrator(
-            gParams.calibrationData, network, gParams.calibBatchSize,
-            gParams.calibMaxBatchIdx);
+        calibrator = new nv::Int8EntropyCalibrator(gParams.calibrationData, network, gParams.calibBatchSize,
+                                                   gParams.calibMaxBatchIdx);
     }
-    if (gParams.dataType == DataType::kHALF &&
-        !builder->platformHasFastFp16()) {
+    if (gParams.dataType == DataType::kHALF && !builder->platformHasFastFp16()) {
         LOG_ERROR("This GPU does not support FP16");
         return false;
     }
@@ -101,9 +95,10 @@ bool onnxToTrtModel(IInt8Calibrator *calibrator,
         config->setFlag(BuilderFlag::kSTRICT_TYPES);
         config->setFlag(BuilderFlag::kGPU_FALLBACK);
         if (gParams.batchSize > builder->getMaxDLABatchSize()) {
-            LOG_WARNING("Requested batch size {} is greater than the max DLA "
-                        "batch size of {}. Reducing batch size accordingly.",
-                        gParams.batchSize, builder->getMaxDLABatchSize());
+            LOG_WARNING(
+                "Requested batch size {} is greater than the max DLA "
+                "batch size of {}. Reducing batch size accordingly.",
+                gParams.batchSize, builder->getMaxDLABatchSize());
             gParams.batchSize = builder->getMaxDLABatchSize();
         }
     }
@@ -112,9 +107,7 @@ bool onnxToTrtModel(IInt8Calibrator *calibrator,
         auto *input = network->getInput(i);
         auto name = input->getName();
         auto const dims = input->getDimensions();
-        auto const isDynamicInput =
-            std::any_of(dims.d, dims.d + dims.nbDims,
-                        [](int32_t dim) { return dim == -1; });
+        auto const isDynamicInput = std::any_of(dims.d, dims.d + dims.nbDims, [](int32_t dim) { return dim == -1; });
         if (isDynamicInput) {
             LOG_FATAL("Not support dynamic input shape yet");
         } else {
@@ -123,8 +116,7 @@ bool onnxToTrtModel(IInt8Calibrator *calibrator,
             profile->setDimensions(name, OptProfileSelector::kMAX, dims);
         }
     }
-    config->setMaxWorkspaceSize(static_cast<size_t>(gParams.workspaceSize)
-                                << 20);
+    config->setMaxWorkspaceSize(static_cast<size_t>(gParams.workspaceSize) << 20);
     if (-1 == config->addOptimizationProfile(profile)) {
         LOG_ERROR("Failed to addOptimizationProfile");
         return false;
@@ -145,43 +137,21 @@ bool onnxToTrtModel(IInt8Calibrator *calibrator,
 bool parseArgs(int argc, char **argv) {
     argparse::ArgumentParser parser(argv[0], std::string("1.0"));
     parser.add_argument("--model").help("Onnx model file").required();
-    parser.add_argument("--engine")
-        .help("Engine file to serialize to")
-        .required();
-    parser.add_argument("--batch")
-        .help("Set batch size. For dynamic onnx")
-        .default_value(1)
-        .scan<'i', int>();
+    parser.add_argument("--engine").help("Engine file to serialize to").required();
+    parser.add_argument("--batch").help("Set batch size. For dynamic onnx").default_value(1).scan<'i', int>();
     parser.add_argument("--dtype")
         .help("Run in precision mode. Support fp32/fp16/int8")
         .default_value(std::string("fp16"));
-    parser.add_argument("--device")
-        .help("Set cuda device to N")
-        .default_value(0)
-        .scan<'i', int>();
-    parser.add_argument("--DLACore")
-        .help("Set DLACore to N")
-        .default_value(-1)
-        .scan<'i', int>();
-    parser.add_argument("--iter")
-        .help("Run N iterations")
-        .default_value(1)
-        .scan<'i', int>();
+    parser.add_argument("--device").help("Set cuda device to N").default_value(0).scan<'i', int>();
+    parser.add_argument("--DLACore").help("Set DLACore to N").default_value(-1).scan<'i', int>();
+    parser.add_argument("--iter").help("Run N iterations").default_value(1).scan<'i', int>();
     parser.add_argument("--avg_iter")
         .help("Set the number of averaging iterations used when timing layers")
         .default_value(1)
         .scan<'i', int>();
-    parser.add_argument("--workspace")
-        .help("Set workspace size in MBytes")
-        .default_value(512)
-        .scan<'i', int>();
-    parser.add_argument("--calib_data")
-        .help("Set calibration data dir, for int8 mode")
-        .default_value("");
-    parser.add_argument("--calib_batch")
-        .help("Set calibration batch")
-        .scan<'i', int>()
-        .default_value(1);
+    parser.add_argument("--workspace").help("Set workspace size in MBytes").default_value(512).scan<'i', int>();
+    parser.add_argument("--calib_data").help("Set calibration data dir, for int8 mode").default_value("");
+    parser.add_argument("--calib_batch").help("Set calibration batch").scan<'i', int>().default_value(1);
     parser.add_argument("--calib_max_batch_idx")
         .help("Set calibration max batch idx")
         .scan<'i', int>()
@@ -231,8 +201,7 @@ int main(int argc, char **argv) {
     }
     std::ofstream trtModelFile(gParams.engine.c_str(), std::ios::binary);
     trtModelFile.write((char *)trtModelStream->data(), trtModelStream->size());
-    LOG_INFO("Convert model to tensor model cache: {} completed.",
-             gParams.engine.c_str());
+    LOG_INFO("Convert model to tensor model cache: {} completed.", gParams.engine.c_str());
     trtModelFile.close();
     trtModelStream->destroy();
     SAFE_FREE(calibrator);
