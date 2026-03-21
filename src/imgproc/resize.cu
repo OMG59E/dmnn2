@@ -107,7 +107,9 @@ __device__ float calcScaleVal(const T *src, int channels, int src_h, int src_w, 
             v01 = src[dc * src_h * src_w + (sy + 1) * src_w + (sx + 0)];
             v10 = src[dc * src_h * src_w + (sy + 0) * src_w + (sx + 1)];
             v11 = src[dc * src_h * src_w + (sy + 1) * src_w + (sx + 1)];
+            break;
         default:
+            v00 = v01 = v10 = v11 = 0.0f;
             break;
     }
     return cbufx.x * cbufy.x * v00 + cbufx.x * cbufy.y * v01 + cbufx.y * cbufy.x * v10 + cbufx.y * cbufy.y * v11;
@@ -170,7 +172,9 @@ __device__ unsigned char calcScaleVal2(const unsigned char *src, int channels, i
             v01 = src[dc * src_h * src_w + sy0 * src_w + sx1];
             v10 = src[dc * src_h * src_w + sy1 * src_w + sx0];
             v11 = src[dc * src_h * src_w + sy1 * src_w + sx1];
+            break;
         default:
+            v00 = v01 = v10 = v11 = 0.0f;
             break;
     }
     return resize_cast(cbufx.x * cbufy.x * v00 + cbufx.y * cbufy.x * v01 + cbufx.x * cbufy.y * v10 +
@@ -359,7 +363,7 @@ int resizePaddingCvtColorAsync(cudaStream_t stream, const nv::Image &src, nv::Im
         return -1;
     }
     float3 _padding_values = make_float3(padding_values[0], padding_values[1], padding_values[2]);
-    const int nbThreads = dst.h() * dst.h();
+    const int nbThreads = dst.h() * dst.w();
     resizePaddingCvtColor_kernel<<<CUDA_GET_BLOCKS(nbThreads), CUDA_NUM_THREADS, 0, stream>>>(
         nbThreads, (unsigned char *)(src.gpu_data), src.channels(), src.h(), src.w(), src.colorType,
         (unsigned char *)(dst.gpu_data), dst.h(), dst.w(), dst.colorType, target_h, target_w, start_y, start_x,
@@ -378,7 +382,7 @@ int resizePaddingCvtColor(const nv::Image &src, nv::Image &dst, PaddingMode padd
         return -1;
     }
     float3 _padding_values = make_float3(padding_values[0], padding_values[1], padding_values[2]);
-    const int nbThreads = dst.h() * dst.h();
+    const int nbThreads = dst.h() * dst.w();
     resizePaddingCvtColor_kernel<<<CUDA_GET_BLOCKS(nbThreads), CUDA_NUM_THREADS>>>(
         nbThreads, (unsigned char *)(src.gpu_data), src.channels(), src.h(), src.w(), src.colorType,
         (unsigned char *)(dst.gpu_data), dst.h(), dst.w(), dst.colorType, target_h, target_w, start_y, start_x,

@@ -219,7 +219,7 @@ typedef struct Image {
 struct Tensor {
     int32_t idx;
     std::string name;
-    uint32_t nbDims{TESNOR_MAX_DIM};
+    uint32_t nbDims{0};
     uint32_t dims[TESNOR_MAX_DIM]{};
     DataType dataType{DATA_TYPE_FLOAT32};
     bool own{true};
@@ -301,10 +301,10 @@ typedef struct BoundingBox {
         return (y1 + y2) / 2;
     }
     BoundingBox() = default;
-    BoundingBox(int x1, int x2, int y1, int y2) {
+    BoundingBox(int x1, int y1, int x2, int y2) {
         this->x1 = x1;
-        this->x2 = x2;
         this->y1 = y1;
+        this->x2 = x2;
         this->y2 = y2;
     }
     color_t color;
@@ -315,7 +315,7 @@ typedef struct Classification {
     int32_t cls_idx{0};
 } classification_t;
 
-typedef struct Detetcion {
+typedef struct Detection {
     BoundingBox bbox;
     float score{0};
     int32_t cls_idx{0};

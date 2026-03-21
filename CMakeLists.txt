@@ -17,8 +17,6 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
-cmake_policy(SET CMP0077 NEW)
-
 # C++ Standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -49,6 +47,7 @@ set(CUDA_NVCC_FLAGS
 # CUDA Toolkit
 # ------------------------------------------------------------------------------
 cmake_policy(SET CMP0146 OLD)
+cmake_policy(SET CMP0077 NEW)
 find_package(CUDA 11.1 EXACT QUIET REQUIRED)
 if(CUDA_FOUND)
     message(STATUS "Found CUDA: ${CUDA_TOOLKIT_ROOT_DIR} (version ${CUDA_VERSION})")
@@ -111,14 +110,15 @@ include_directories(${CUDA_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${TensorRT_INCLUDE_DIR})
 include_directories(include)
-include_directories(include/utils/spdlog/include)
-include_directories(include/utils/argparse/include)
 include_directories(src/utils)
 include_directories(src/parsers/onnx)
 
 # Third-party libraries
-include_directories(3rdparty/include)
-link_directories(3rdparty/lib)
+include_directories(3rdparty/argparse/include)
+include_directories(3rdparty/spdlog/include)
+include_directories(3rdparty/ffmpeg/include)
+include_directories(3rdparty/nvidia/include)
+link_directories(3rdparty/ffmpeg/lib)
 
 set(FFMPEG_LIBRARIES avcodec avformat avutil swscale swresample)
 set(NV_DRIVER_LIBRARIES nvcuvid cuda)

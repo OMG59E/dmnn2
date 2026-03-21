@@ -9,7 +9,8 @@
  */
 #include "imgproc/draw.h"
 
-#define CLIP(a, b) (a < b ? a : b)
+#undef CLIP
+#define CLIP(val, low, high) ((val) < (low) ? (low) : ((val) > (high) ? (high) : (val)))
 
 namespace nv {
 __global__ void line_hv_kernel(const int nbThreads, unsigned char *src, int channels, int src_h, int src_w,
@@ -55,35 +56,35 @@ __global__ void rectangle_kernel(const int nbThreads, unsigned char *src, int ch
         switch (src_color_type) {
             case nv::COLOR_TYPE_BGR888_PACKED:
                 src[dy * src_w * channels + dx * channels + 0] =
-                    CLIP(0.5 * color.b + 0.5 * src[dy * src_w * channels + dx * channels + 0], 255);
+                    CLIP(0.5 * color.b + 0.5 * src[dy * src_w * channels + dx * channels + 0], 0, 255);
                 src[dy * src_w * channels + dx * channels + 1] =
-                    CLIP(0.5 * color.g + 0.5 * src[dy * src_w * channels + dx * channels + 1], 255);
+                    CLIP(0.5 * color.g + 0.5 * src[dy * src_w * channels + dx * channels + 1], 0, 255);
                 src[dy * src_w * channels + dx * channels + 2] =
-                    CLIP(0.5 * color.r + 0.5 * src[dy * src_w * channels + dx * channels + 2], 255);
+                    CLIP(0.5 * color.r + 0.5 * src[dy * src_w * channels + dx * channels + 2], 0, 255);
                 break;
             case nv::COLOR_TYPE_RGB888_PACKED:
                 src[dy * src_w * channels + dx * channels + 0] =
-                    CLIP(0.5 * color.r + 0.5 * src[dy * src_w * channels + dx * channels + 0], 255);
+                    CLIP(0.5 * color.r + 0.5 * src[dy * src_w * channels + dx * channels + 0], 0, 255);
                 src[dy * src_w * channels + dx * channels + 1] =
-                    CLIP(0.5 * color.g + 0.5 * src[dy * src_w * channels + dx * channels + 1], 255);
+                    CLIP(0.5 * color.g + 0.5 * src[dy * src_w * channels + dx * channels + 1], 0, 255);
                 src[dy * src_w * channels + dx * channels + 2] =
-                    CLIP(0.5 * color.b + 0.5 * src[dy * src_w * channels + dx * channels + 2], 255);
+                    CLIP(0.5 * color.b + 0.5 * src[dy * src_w * channels + dx * channels + 2], 0, 255);
                 break;
             case nv::COLOR_TYPE_BGR888_PLANAR:
                 src[0 * src_h * src_w + dy * src_w + dx] =
-                    CLIP(0.5 * color.b + 0.5 * src[0 * src_h * src_w + dy * src_w + dx], 255);
+                    CLIP(0.5 * color.b + 0.5 * src[0 * src_h * src_w + dy * src_w + dx], 0, 255);
                 src[1 * src_h * src_w + dy * src_w + dx] =
-                    CLIP(0.5 * color.g + 0.5 * src[1 * src_h * src_w + dy * src_w + dx], 255);
+                    CLIP(0.5 * color.g + 0.5 * src[1 * src_h * src_w + dy * src_w + dx], 0, 255);
                 src[2 * src_h * src_w + dy * src_w + dx] =
-                    CLIP(0.5 * color.r + 0.5 * src[2 * src_h * src_w + dy * src_w + dx], 255);
+                    CLIP(0.5 * color.r + 0.5 * src[2 * src_h * src_w + dy * src_w + dx], 0, 255);
                 break;
             case nv::COLOR_TYPE_RGB888_PLANAR:
                 src[0 * src_h * src_w + dy * src_w + dx] =
-                    CLIP(0.5 * color.r + 0.5 * src[0 * src_h * src_w + dy * src_w + dx], 255);
+                    CLIP(0.5 * color.r + 0.5 * src[0 * src_h * src_w + dy * src_w + dx], 0, 255);
                 src[1 * src_h * src_w + dy * src_w + dx] =
-                    CLIP(0.5 * color.g + 0.5 * src[1 * src_h * src_w + dy * src_w + dx], 255);
+                    CLIP(0.5 * color.g + 0.5 * src[1 * src_h * src_w + dy * src_w + dx], 0, 255);
                 src[2 * src_h * src_w + dy * src_w + dx] =
-                    CLIP(0.5 * color.b + 0.5 * src[2 * src_h * src_w + dy * src_w + dx], 255);
+                    CLIP(0.5 * color.b + 0.5 * src[2 * src_h * src_w + dy * src_w + dx], 0, 255);
                 break;
             default:
                 break;

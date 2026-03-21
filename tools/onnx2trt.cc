@@ -63,10 +63,16 @@ bool onnxToTrtModel(IInt8Calibrator *calibrator, nvinfer1::IHostMemory **trtMode
     int32_t verbosity = 2;  // ILogger::Severity::kWARNING
     if (!parser->parseFromFile(gParams.model.c_str(), verbosity)) {
         LOG_ERROR("Failed to parse onnx file");
+        parser->destroy();
+        network->destroy();
+        builder->destroy();
         return false;
     }
     if (gParams.dataType == DataType::kINT8 && !builder->platformHasFastInt8()) {
         LOG_ERROR("This GPU does not support int8");
+        parser->destroy();
+        network->destroy();
+        builder->destroy();
         return false;
     }
     if (gParams.dataType == DataType::kINT8) {
@@ -75,6 +81,10 @@ bool onnxToTrtModel(IInt8Calibrator *calibrator, nvinfer1::IHostMemory **trtMode
     }
     if (gParams.dataType == DataType::kHALF && !builder->platformHasFastFp16()) {
         LOG_ERROR("This GPU does not support FP16");
+        SAFE_FREE(calibrator);
+        parser->destroy();
+        network->destroy();
+        builder->destroy();
         return false;
     }
     IBuilderConfig *config = builder->createBuilderConfig();
